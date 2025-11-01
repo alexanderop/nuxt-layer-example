@@ -1,558 +1,541 @@
-# Feature-Based Architecture for Nuxt 4
+# Layer-Based Architecture for Nuxt 4
 
-This document describes the feature-based architecture pattern implemented in this Nuxt 4 project, adapted from modern React patterns to work seamlessly with Nuxt conventions.
+This document describes the layer-based architecture pattern implemented in this Nuxt 4 project.
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Project Structure](#project-structure)
 - [Core Principles](#core-principles)
-- [Directory Organization](#directory-organization)
-- [Architecture Rules](#architecture-rules)
-- [Creating a New Feature](#creating-a-new-feature)
-- [Routing Strategy](#routing-strategy)
+- [Layer Priority](#layer-priority)
+- [Creating a New Layer](#creating-a-new-layer)
+- [Layer Aliases](#layer-aliases)
 - [State Management](#state-management)
-- [ESLint Enforcement](#eslint-enforcement)
 - [Best Practices](#best-practices)
 - [Examples](#examples)
 
 ## Overview
 
-This project uses a **feature-based architecture** where code is organized by business domain rather than technical role. Instead of having all components in one folder, all composables in another, etc., each feature encapsulates everything it needs in one place.
+This project uses **Nuxt Layers** to organize code by business domain. Each layer is a mini Nuxt application that can be independently developed, tested, and even published as an npm package.
 
 ### Benefits
 
-- **Scalability**: Easy to add new features without affecting existing ones
-- **Maintainability**: All related code is co-located, making it easier to find and modify
-- **Independence**: Features can be developed, tested, and even deployed independently
-- **Clarity**: Clear boundaries between business domains
-- **Reusability**: Features can be extracted or moved to other projects
-- **Team Collaboration**: Different teams can work on different features with minimal conflicts
+- **Natural Boundaries**: Layers physically separate features - no ESLint rules needed
+- **Scalability**: Easy to add new layers without affecting existing ones
+- **Reusability**: Layers can be published as npm packages or git repos
+- **Independence**: Each layer has its own configuration, dependencies, and pages
+- **Auto-Registration**: Layers in `~/layers/` are automatically registered
+- **Named Aliases**: Access layers via `#layers/name` aliases
+- **Override System**: Main app can override any layer component/config/page
+- **Feature-Based Routing**: Each layer defines its own pages for complete feature isolation
 
 ## Project Structure
 
 ```
 nuxt-app/
-├── app/
-│   ├── features/              # Feature modules (business domains)
-│   │   ├── todos/             # Example: Todos feature
-│   │   │   ├── api/           # API calls & composables
-│   │   │   ├── components/    # Feature-scoped components
-│   │   │   ├── stores/        # Pinia stores
-│   │   │   ├── types/         # TypeScript types
-│   │   │   ├── utils/         # Feature-specific utilities
-│   │   │   └── README.md      # Feature documentation
-│   │   └── README.md          # Features guide
+├── layers/                         # Nuxt layers (auto-registered)
+│   ├── shared/                     # Base layer (foundational utilities)
+│   │   ├── app/
+│   │   │   ├── components/         # Shared UI components
+│   │   │   │   └── baseBadge.vue
+│   │   │   └── utils/              # Shared utilities
+│   │   │       ├── currency.ts
+│   │   │       └── storage.ts
+│   │   ├── nuxt.config.ts          # Layer configuration
+│   │   └── README.md               # Layer documentation
 │   │
-│   ├── components/            # Shared components
-│   ├── composables/           # Shared composables
-│   ├── types/                 # Shared types
-│   ├── utils/                 # Shared utilities
-│   ├── config/                # App configuration
-│   └── app.vue                # Root component
+│   ├── products/                   # Products feature layer
+│   │   ├── app/
+│   │   │   ├── pages/              # Product-related pages
+│   │   │   │   ├── (home)/
+│   │   │   │   │   └── index.vue   # Home/catalog page
+│   │   │   │   └── products/
+│   │   │   │       └── [id].vue    # Product detail page
+│   │   │   ├── components/         # Product components
+│   │   │   │   ├── productCard.vue
+│   │   │   │   ├── productGrid.vue
+│   │   │   │   └── productFilters.vue
+│   │   │   ├── stores/             # Pinia stores (Elm Architecture)
+│   │   │   │   └── products/
+│   │   │   │       ├── products.ts
+│   │   │   │       ├── productsModel.ts
+│   │   │   │       ├── productsUpdate.ts
+│   │   │   │       └── productsEffects.ts
+│   │   │   ├── schemas/            # Zod schemas
+│   │   │   │   ├── product.ts
+│   │   │   │   └── filters.ts
+│   │   │   └── utils/              # Product utilities
+│   │   │       └── filters.ts
+│   │   ├── nuxt.config.ts
+│   │   └── README.md
+│   │
+│   └── cart/                       # Cart feature layer
+│       ├── app/
+│       │   ├── pages/              # Cart-related pages
+│       │   │   └── shoppingCart.vue # Shopping cart page
+│       │   ├── components/         # Cart components
+│       │   │   ├── cartItem.vue
+│       │   │   ├── cartList.vue
+│       │   │   └── cartSummary.vue
+│       │   ├── stores/             # Pinia stores (Elm Architecture)
+│       │   │   └── cart/
+│       │   │       ├── cart.ts
+│       │   │       ├── cartModel.ts
+│       │   │       ├── cartUpdate.ts
+│       │   │       └── cartEffects.ts
+│       │   ├── schemas/            # Zod schemas
+│       │   │   └── cart.ts
+│       │   └── utils/              # Cart utilities
+│       │       └── calculations.ts
+│       ├── nuxt.config.ts
+│       └── README.md
 │
-├── pages/                     # File-based routing (Nuxt convention)
-│   ├── (home)/                # Route group (parentheses ignored in URL)
-│   │   └── index.vue          # Route: /
-│   └── (todos)/               # Route group organized by feature
-│       ├── index.vue          # Route: /todos
-│       └── [id].vue           # Route: /todos/:id
+├── app/                            # Main application (highest priority)
+│   ├── layouts/                    # App layouts (optional)
+│   └── app.vue                     # Root component
 │
-├── public/                    # Static assets
-├── nuxt.config.ts            # Nuxt configuration
-├── eslint.config.mjs         # ESLint with boundary rules
-├── ARCHITECTURE.md           # This file
-└── CLAUDE.md                 # Project instructions
+├── public/                         # Static assets
+├── nuxt.config.ts                  # Main Nuxt configuration
+└── ARCHITECTURE.md                 # This file
 ```
 
 ## Core Principles
 
-### 1. Feature Encapsulation
+### 1. Layer Auto-Registration
 
-Each feature is **self-contained** and includes everything it needs:
-- Components
-- API logic / Composables
-- State management (Pinia stores)
-- Types
-- Utilities
-- Tests
+Layers in `~/layers/` are automatically registered by Nuxt:
+- No need to manually add them to `nuxt.config.ts`
+- Named aliases created automatically: `#layers/shared`, `#layers/products`, `#layers/cart`
+- Alphabetical registration order within `~/layers/`
 
-### 2. No Cross-Feature Imports
+### 2. Natural Boundaries
 
-Features **cannot import from other features**. This prevents tight coupling and maintains independence.
+Layers provide physical separation:
+- ✅ **No cross-layer imports possible** - enforced by filesystem
+- ✅ **No ESLint boundary rules needed** - layers can't accidentally import from each other
+- ✅ **Clear dependency direction**: shared → products → cart → main app
 
-❌ **Bad** - Cross-feature import:
+### 3. Named Aliases
+
+Access layers using named aliases:
 ```typescript
-// app/features/comments/components/comment.vue
-import { getUserName } from '~/app/features/users/utils/format'
+// ✅ Using named alias (recommended)
+import { formatCurrency } from '#layers/shared/app/utils/currency'
+import { useProductsStore } from '#layers/products/app/stores/products/products'
+import { useCartStore } from '#layers/cart/app/stores/cart/cart'
+
+// ❌ Relative paths (discouraged)
+import { formatCurrency } from '../../../layers/shared/app/utils/currency'
 ```
 
-✅ **Good** - Import from shared or compose at page level:
-```typescript
-// app/utils/format.ts (shared utility)
-export function getUserName(user: User): string { ... }
+### 4. Override System
 
-// app/features/comments/components/comment.vue
-import { getUserName } from '~/app/utils/format'
+Main app has highest priority and can override anything:
+```
+Main App (highest)
+    ↓
+Cart Layer
+    ↓
+Products Layer
+    ↓
+Shared Layer (lowest)
 ```
 
-### 3. Unidirectional Code Flow
+## Layer Priority
 
-Code dependencies flow in **one direction**: `shared → features → pages`
+Layers are registered in this order (earliest = highest priority among layers):
 
-```
-┌──────────────────────────────────────────┐
-│  Pages (Highest level)                   │
-│  - Compose features                      │
-│  - Define routes                         │
-└────────────────┬─────────────────────────┘
-                 │ can import from
-                 ↓
-┌──────────────────────────────────────────┐
-│  Features (Middle level)                 │
-│  - Business logic                        │
-│  - Feature-specific components & state   │
-└────────────────┬─────────────────────────┘
-                 │ can import from
-                 ↓
-┌──────────────────────────────────────────┐
-│  Shared (Lowest level)                   │
-│  - components, composables, types, utils │
-│  - Reusable across features              │
-└──────────────────────────────────────────┘
-```
+1. **Main application** (`app/`) - HIGHEST PRIORITY (always wins)
+2. **`layers/shared`** (alphabetically last in layers/)
+3. **`layers/products`**
+4. **`layers/cart`** (alphabetically first in layers/)
 
-### 4. Explicit Imports
+This means:
+- Main app can override any layer component/page
+- `layers/shared` can override `layers/products` and `layers/cart`
+- `layers/products` can override `layers/cart`
 
-This project has **auto-imports disabled**. All imports must be explicit:
+## Pages in Layers
 
-```vue
-<script setup lang="ts">
-// ✅ Explicit imports required
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useTodosStore } from '~/app/features/todos/stores/todos'
-</script>
-```
+Each layer can define its own pages that are automatically merged into the application's routing system. This provides complete feature isolation where a layer contains everything related to a feature: components, stores, schemas, utils, AND pages.
 
-## Directory Organization
+### Benefits of Layer Pages
 
-### Shared Directories
+- **Feature Ownership**: Each layer owns its complete feature including routes
+- **Reusability**: Pages travel with the layer when published
+- **No Coupling**: Main app doesn't need to know about layer pages
+- **Override Support**: Main app can override layer pages if needed
 
-Located in `app/`:
+### How It Works
 
-- **`components/`** - UI components used by multiple features
-- **`composables/`** - Vue composables shared across features
-- **`types/`** - TypeScript types used globally
-- **`utils/`** - Pure utility functions
-- **`config/`** - App configuration and constants
+When you add pages to a layer's `app/pages/` directory:
+1. Nuxt automatically scans all layer pages
+2. Pages are merged with the main app's routing
+3. Layer priority determines which page wins if there's a conflict
+4. The main app always has the highest priority
 
-**Rules:**
-- ✅ Can import from: Each other
-- ❌ Cannot import from: `features/`, `pages/`
-
-### Features Directory
-
-Located in `app/features/`:
-
-Each feature has this structure:
+### Example Layer Page Structure
 
 ```
-features/[feature-name]/
-├── api/              # API calls, composables for data fetching
-├── components/       # Vue components specific to this feature
-├── stores/           # Pinia stores (optional)
-├── types/            # TypeScript types specific to this feature
-├── utils/            # Utility functions specific to this feature
-└── README.md         # Feature documentation
+layers/products/app/pages/
+├── (home)/
+│   └── index.vue        # Route: /
+└── products/
+    └── [id].vue         # Route: /products/:id
+
+layers/cart/app/pages/
+└── shoppingCart.vue     # Route: /shoppingCart
 ```
 
-**Rules:**
-- ✅ Can import from: Shared modules (`app/components`, `app/composables`, etc.)
-- ✅ Can import from: Own feature's modules
-- ❌ Cannot import from: Other features, `pages/`
+## Creating a New Layer
 
-### Pages Directory
-
-Located in `pages/` (Nuxt convention):
-
-Pages define routes and **compose features together**.
-
-**Rules:**
-- ✅ Can import from: Features, shared modules
-- ✅ Can compose: Multiple features in one page
-- ❌ Should not contain: Business logic (belongs in features)
-
-## Architecture Rules
-
-These rules are **enforced by ESLint** via `eslint-plugin-import`:
-
-### 1. Prevent Cross-Feature Imports
-
-```javascript
-{
-  target: './app/features/todos',
-  from: './app/features',
-  except: ['./todos'],
-}
-```
-
-This ensures `todos` feature can't import from other features.
-
-### 2. Enforce Unidirectional Flow
-
-```javascript
-// Features can't import from pages
-{
-  target: './app/features',
-  from: './pages',
-}
-
-// Shared modules can't import from features or pages
-{
-  target: ['./app/components', './app/composables', './app/types', './app/utils', './app/config'],
-  from: ['./app/features', './pages'],
-}
-```
-
-## Creating a New Feature
-
-### Step 1: Create Feature Directory
+### Step 1: Create Layer Directory
 
 ```bash
-mkdir -p app/features/my-feature/{api,components,stores,types,utils}
+mkdir -p layers/my-feature/app/{pages,components,composables,stores,schemas,utils}
 ```
 
-### Step 2: Add Feature Types
+### Step 2: Add Layer Config
 
-```typescript
-// app/features/my-feature/types/index.ts
-export interface MyEntity {
-  id: string
-  name: string
-}
+```ts
+// layers/my-feature/nuxt.config.ts
+export default defineNuxtConfig({
+  $meta: {
+    name: 'my-feature',
+    description: 'My awesome feature',
+  },
 
-export interface CreateMyEntityDto {
-  name: string
-}
-```
-
-### Step 3: Create API Composable (Optional)
-
-```typescript
-// app/features/my-feature/api/use-my-feature.ts
-import { ref } from 'vue'
-import type { MyEntity } from '../types'
-
-export function useMyFeature() {
-  const data = ref<MyEntity[]>([])
-  const loading = ref(false)
-
-  async function fetchData() {
-    // API logic
-  }
-
-  return { data, loading, fetchData }
-}
-```
-
-### Step 4: Create Pinia Store (Optional)
-
-```typescript
-// app/features/my-feature/stores/my-feature.ts
-import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import type { MyEntity } from '../types'
-
-export const useMyFeatureStore = defineStore('my-feature', () => {
-  const items = ref<MyEntity[]>([])
-
-  async function fetchItems() {
-    // Implementation
-  }
-
-  return { items, fetchItems }
+  // Disable auto-imports (for explicit imports)
+  components: { dirs: [] },
+  imports: { autoImport: false },
 })
 ```
 
-### Step 5: Create Components
+### Step 3: Create Components
 
 ```vue
-<!-- app/features/my-feature/components/my-component.vue -->
-<template>
-  <div>{{ myEntity.name }}</div>
-</template>
-
+<!-- layers/my-feature/app/components/myComponent.vue -->
 <script setup lang="ts">
-import type { MyEntity } from '../types'
+import { ref } from 'vue'
+import { formatCurrency } from '#layers/shared/app/utils/currency'
 
-interface Props {
-  myEntity: MyEntity
-}
-
-const props = defineProps<Props>()
+const count = ref(0)
 </script>
+
+<template>
+  <div>{{ count }}</div>
+</template>
 ```
 
-### Step 6: Update ESLint Config
+### Step 4: Create Zod Schemas
 
-Add your feature to the boundary rules in `eslint.config.mjs`:
+```typescript
+// layers/my-feature/app/schemas/mySchema.ts
+import { z } from 'zod'
 
-```javascript
-{
-  target: './app/features/my-feature',
-  from: './app/features',
-  except: ['./my-feature'],
-},
+export const MySchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1).max(200),
+})
+
+export type MyType = z.infer<typeof MySchema>
 ```
 
-### Step 7: Create Pages
+### Step 5: Create Pinia Store (Optional)
+
+```typescript
+// layers/my-feature/app/stores/myStore.ts
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+
+export const useMyStore = defineStore('my-feature', () => {
+  const items = ref([])
+  return { items }
+})
+```
+
+### Step 6: Document Your Layer
+
+Create `layers/my-feature/README.md` with:
+- Overview
+- Contents (components, stores, schemas, utils)
+- Usage examples
+- Dependencies
+
+### Step 7: Create Pages (Optional)
+
+If your layer needs routes, add pages to `app/pages/`:
 
 ```vue
-<!-- pages/(my-feature)/index.vue -->
+<!-- layers/my-feature/app/pages/my-feature.vue -->
+<script setup lang="ts">
+import MyComponent from '#layers/my-feature/app/components/myComponent.vue'
+import { useMyStore } from '#layers/my-feature/app/stores/myStore'
+
+const myStore = useMyStore()
+</script>
+
 <template>
   <div>
-    <MyComponent :my-entity="entity" />
-  </div>
-</template>
-
-<script setup lang="ts">
-import MyComponent from '~/app/features/my-feature/components/my-component.vue'
-import { useMyFeatureStore } from '~/app/features/my-feature/stores/my-feature'
-
-const store = useMyFeatureStore()
-// ...
-</script>
-```
-
-Note: Route groups use parentheses (e.g., `(my-feature)/`) to organize pages by feature while keeping clean URLs (`/my-feature` not `/(my-feature)`).
-
-### Step 8: Document Your Feature
-
-Create `app/features/my-feature/README.md` with:
-- Overview
-- Structure
-- Usage examples
-- API integration details
-- Testing notes
-
-## Routing Strategy
-
-This project uses a **hybrid routing approach**:
-
-- **Centralized Routes**: All route files live in `pages/` (Nuxt convention)
-- **Route Groups**: Pages organized by feature domain using parentheses syntax (e.g., `(todos)/`) - the parentheses are ignored in URLs, allowing clean organization without affecting routing
-- **Feature Composition**: Pages import and compose components from features
-- **Clear Structure**: Routes are visible in one place
-- **Feature Co-location**: Business logic stays with features
-
-### Example
-
-```vue
-<!-- pages/dashboard.vue -->
-<script setup lang="ts">
-// Compose multiple features in one page
-import TodoList from '~/app/features/todos/components/todo-list.vue'
-import UserProfile from '~/app/features/users/components/user-profile.vue'
-import Analytics from '~/app/features/analytics/components/dashboard.vue'
-</script>
-
-<template>
-  <div class="dashboard">
-    <UserProfile />
-    <Analytics />
-    <TodoList />
+    <h1>My Feature</h1>
+    <MyComponent />
   </div>
 </template>
 ```
+
+This automatically creates the `/my-feature` route without any configuration!
+
+## Layer Aliases
+
+Nuxt automatically creates named aliases for layers:
+
+- `#layers/shared` → `layers/shared/app/`
+- `#layers/products` → `layers/products/app/`
+- `#layers/cart` → `layers/cart/app/`
+
+Use these aliases instead of relative paths for better maintainability.
 
 ## State Management
 
-This project uses **Pinia** for state management.
+This project uses **Pinia** with **The Elm Architecture** pattern:
 
-### Feature-Scoped Stores
+### Elm Architecture in Layers
 
-Each feature can have its own Pinia store:
+Each layer's store follows this pattern:
 
-```typescript
-// app/features/todos/stores/todos.ts
-export const useTodosStore = defineStore('todos', () => {
-  // Feature-specific state
-})
+```
+stores/feature/
+├── feature.ts          # Pinia integration (connects to Vue)
+├── featureModel.ts     # State shape & messages (pure)
+├── featureUpdate.ts    # Pure update function (no side effects)
+└── featureEffects.ts   # Side effects (API, localStorage)
 ```
 
-### Global Stores
+### Benefits
 
-For truly global state, create stores in a shared location:
-
-```typescript
-// app/stores/auth.ts (if you create this directory)
-export const useAuthStore = defineStore('auth', () => {
-  // Global authentication state
-})
-```
-
-## ESLint Enforcement
-
-### Running ESLint
-
-```bash
-# Check for violations
-npx eslint .
-
-# Auto-fix issues
-npx eslint . --fix
-```
-
-### Example Violations
-
-ESLint will catch architectural violations:
-
-```typescript
-// ❌ This will error: cross-feature import
-// app/features/comments/api/use-comments.ts
-import { getUserById } from '~/app/features/users/api/use-users'
-
-// ❌ This will error: shared importing from feature
-// app/components/button.vue
-import { Todo } from '~/app/features/todos/types'
-
-// ❌ This will error: feature importing from page
-// app/features/todos/components/todo-list.vue
-import { SomePage } from '~/pages/dashboard.vue'
-```
+- **Pure Logic**: Update functions are testable, framework-agnostic
+- **Predictable**: Same input always produces same output
+- **Traceable**: All state changes via explicit messages
+- **Side-Effect Isolation**: Effects separated from pure logic
 
 ## Best Practices
 
-### 1. Keep Features Focused
+### 1. Keep Layers Focused
 
-Each feature should represent **one business domain**:
-- ✅ `features/todos/` - Todo management
-- ✅ `features/auth/` - Authentication
-- ❌ `features/utils/` - Too generic, use `app/utils/` instead
+Each layer should represent **one business domain**:
+- ✅ `layers/products/` - Product catalog
+- ✅ `layers/cart/` - Shopping cart
+- ✅ `layers/checkout/` - Checkout flow
+- ❌ `layers/utils/` - Too generic (use `layers/shared/`)
 
-### 2. Move to Shared When Needed
+### 2. Use Shared Layer for Common Code
 
-If a utility/component is used by **2+ features**, move it to shared:
+Move reusable code to `layers/shared/`:
+- UI components used across features
+- Utility functions (currency, dates, validation)
+- Common types and interfaces
 
+### 3. Layer Dependencies
+
+Layers can depend on each other:
 ```typescript
-// Start here (feature-specific)
-app/features/todos/utils/format-date.ts
-
-// Multiple features need it? Move to shared
-app/utils/format-date.ts
+// layers/cart depends on layers/products
+import type { Product } from '#layers/products/app/schemas/product'
 ```
 
-### 3. Document Features
+But avoid circular dependencies!
 
-Every feature should have a README.md explaining:
-- What the feature does
-- How to use it
-- API integration details
-- Type definitions
+### 4. Runtime Validation
 
-### 4. Test Features Independently
-
-Features should be testable in isolation:
+Always use Zod for:
+- API responses
+- localStorage data
+- User input
+- Cross-layer data
 
 ```typescript
-// app/features/todos/utils/validation.test.ts
-import { validateTodoTitle } from './validation'
+import { z } from 'zod'
+import { ProductSchema } from '#layers/products/app/schemas/product'
 
-describe('validateTodoTitle', () => {
-  it('should validate correctly', () => {
-    // Test without dependencies on other features
+const result = ProductSchema.safeParse(data)
+if (result.success) {
+  // Use result.data safely
+}
+```
+
+### 5. Document Layer APIs
+
+Each layer should have clear public API documentation:
+- Exported components
+- Store methods
+- Utility functions
+- Type definitions
+
+### 6. Test Layers Independently
+
+Layers should be testable in isolation:
+```typescript
+// layers/products/app/utils/filters.test.ts
+import { filterProducts } from './filters'
+
+describe('filterProducts', () => {
+  it('filters by category', () => {
+    // Test without dependencies on other layers
   })
 })
 ```
 
-### 5. Use TypeScript Strictly
-
-Define clear types for your features:
-
-```typescript
-// app/features/todos/types/index.ts
-export interface Todo {
-  id: string
-  title: string
-  completed: boolean
-}
-
-// Export DTOs separately
-export interface CreateTodoDto {
-  title: string
-}
-```
-
 ## Examples
 
-### Example 1: Todo Feature
+### Example 1: Layer-Owned Pages
 
-See `app/features/todos/` for a complete example including:
-- API composable: `api/use-todos.ts`
-- Pinia store: `stores/todos.ts`
-- Components: `components/todo-list.vue`, `todo-item.vue`, `todo-form.vue`
-- Types: `types/index.ts`
-- Validation: `utils/validation.ts`
-
-### Example 2: Page Composing Features
+Pages are now defined within layers, not in the main app:
 
 ```vue
-<!-- pages/dashboard.vue -->
+<!-- layers/products/app/pages/(home)/index.vue -->
+<!-- This creates the / route -->
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import TodoList from '~/app/features/todos/components/todo-list.vue'
-import { useTodosStore } from '~/app/features/todos/stores/todos'
-import { useAuthStore } from '~/app/stores/auth'
+import type { Product } from '#layers/products/app/schemas/product'
+import { useProductsStore } from '#layers/products/app/stores/products/products'
+import { useCartStore } from '#layers/cart/app/stores/cart/cart'
+import ProductGrid from '#layers/products/app/components/productGrid.vue'
+import CartSummary from '#layers/cart/app/components/cartSummary.vue'
 
-const todosStore = useTodosStore()
-const authStore = useAuthStore()
+const productsStore = useProductsStore()
+const cartStore = useCartStore()
 
 onMounted(async () => {
-  await todosStore.fetchTodos()
+  await productsStore.fetchProducts()
 })
+
+function handleAddToCart(product: Product) {
+  cartStore.dispatch({ type: 'ADD_ITEM', product })
+}
 </script>
 
 <template>
-  <div class="dashboard">
-    <h1>Welcome, {{ authStore.user?.name }}</h1>
-    <TodoList />
+  <div>
+    <ProductGrid
+      :products="productsStore.state.filteredProducts"
+      @add-to-cart="handleAddToCart"
+    />
+    <CartSummary />
   </div>
 </template>
 ```
 
-### Example 3: Shared Utility
+```vue
+<!-- layers/cart/app/pages/shoppingCart.vue -->
+<!-- This creates the /shoppingCart route -->
+<script setup lang="ts">
+import CartList from '#layers/cart/app/components/cartList.vue'
+</script>
+
+<template>
+  <div>
+    <h1>Shopping Cart</h1>
+    <CartList />
+  </div>
+</template>
+```
+
+### Example 2: Cross-Layer Types
 
 ```typescript
-// app/utils/date.ts
-export function formatDate(date: Date, format = 'short'): string {
-  // Pure utility function
-  // Can be used by any feature
+// layers/cart depends on layers/products for Product type
+// layers/cart/app/schemas/cart.ts
+import { z } from 'zod'
+import { ProductSchema } from '#layers/products/app/schemas/product'
+
+export const CartItemSchema = z.object({
+  product: ProductSchema,  // ✅ Reusing Product schema
+  quantity: z.number().positive(),
+  subtotal: z.number().nonnegative(),
+})
+```
+
+### Example 3: Shared Utilities
+
+```typescript
+// layers/shared/app/utils/currency.ts
+export function formatCurrency(cents: number): string {
+  const dollars = cents / 100
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(dollars)
 }
 
-// Usage in feature
-// app/features/todos/components/todo-item.vue
-import { formatDate } from '~/app/utils/date'
+// Used in layers/products and layers/cart
+import { formatCurrency } from '#layers/shared/app/utils/currency'
+```
+
+## Publishing Layers
+
+### As npm Package
+
+1. Add `package.json` to layer:
+```json
+{
+  "name": "@your-org/products-layer",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./nuxt.config.ts",
+  "dependencies": {
+    "zod": "^3.x.x"
+  },
+  "devDependencies": {
+    "nuxt": "^3.0.0"
+  }
+}
+```
+
+2. Publish to npm:
+```bash
+npm publish
+```
+
+3. Use in other projects:
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  extends: [
+    '@your-org/shared-layer',
+    '@your-org/products-layer'
+  ]
+})
+```
+
+### As Git Repository
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  extends: [
+    'github:your-org/shared-layer',
+    'github:your-org/products-layer#v1.0.0'
+  ]
+})
 ```
 
 ## Conclusion
 
-This architecture provides:
-- **Clear boundaries** between features
-- **Scalable structure** for growing applications
-- **Enforced rules** via ESLint
-- **Nuxt-friendly** approach using file-based routing
+Nuxt Layers provide:
+- **Natural boundaries** enforced by filesystem
+- **Scalable structure** for any size application
+- **Reusability** via npm packages or git repos
+- **Auto-registration** for zero-config setup
 - **Type-safe** with explicit imports
+- **Override system** for customization
+- **Feature-complete isolation** - components, stores, schemas, utils, AND pages in one layer
+- **Self-contained features** that can be developed, tested, and published independently
 
-By following these patterns, your codebase will remain organized, maintainable, and scalable as it grows.
+This architecture eliminates the need for ESLint boundary rules while providing even stronger guarantees about code organization. Each layer is a complete mini-application that owns its entire feature including routing.
 
 ## Additional Resources
 
-- [Nuxt 4 Documentation](https://nuxt.com/docs)
+- [Nuxt Layers Documentation](https://nuxt.com/docs/getting-started/layers)
+- [Layer Authoring Guide](https://nuxt.com/docs/guide/going-further/layers)
 - [Pinia Documentation](https://pinia.vuejs.org/)
-- [Vue 3 Composition API](https://vuejs.org/guide/extras/composition-api-faq.html)
-- [ESLint Plugin Import](https://github.com/import-js/eslint-plugin-import)
-
-## Questions or Issues?
-
-See `/app/features/README.md` for quick reference on creating features, or check individual README files in each shared directory for specific guidance.
+- [Zod Documentation](https://zod.dev/)

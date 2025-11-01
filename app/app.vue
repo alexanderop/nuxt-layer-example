@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { NuxtRouteAnnouncer, NuxtPage, UApp, UHeader, UButton, UColorModeButton, UBadge, UTooltip } from '#components'
-import { useCartStore } from '~/features/cart/stores/cart/cart'
+import { useCartStore } from '#layers/cart/app/stores/cart/cart'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 

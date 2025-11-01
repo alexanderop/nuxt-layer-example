@@ -1,59 +1,15 @@
 // @ts-check
 import withNuxt from './.nuxt/eslint.config.mjs'
 import oxlint from 'eslint-plugin-oxlint'
-import importPlugin from 'eslint-plugin-import'
 import { SHARED_DISABLED_RULES } from './lint-config.js'
 
 export default withNuxt().append(
-  // Feature-based architecture boundaries
-  {
-    plugins: {
-      'import-boundaries': importPlugin,
-    },
-    rules: {
-      // Enforce feature-based architecture boundaries
-      'import-boundaries/no-restricted-paths': [
-        'error',
-        {
-          zones: [
-            // Prevent cross-feature imports
-            // Each feature can only import from itself, not from other features
-            {
-              except: ['./products'],
-              from: './app/features',
-              target: './app/features/products',
-            },
-            {
-              except: ['./cart'],
-              from: './app/features',
-              target: './app/features/cart',
-            },
-
-            // Enforce unidirectional code flow
-            // Features cannot import from pages
-            {
-              from: './pages',
-              target: './app/features',
-            },
-
-            // Shared modules (components, composables, types, utils, config)
-            // cannot import from features or pages
-            // This keeps shared code truly shared and reusable
-            {
-              from: ['./app/features', './pages'],
-              target: [
-                './app/components',
-                './app/composables',
-                './app/types',
-                './app/utils',
-                './app/config',
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  },
+  // Layer-based architecture
+  // Layers provide natural boundaries - no ESLint boundary rules needed!
+  // - Layers in ~/layers/ are auto-registered
+  // - Layers cannot import from each other (enforced by Nuxt)
+  // - Main app can import from any layer
+  // - Layer order: shared > cart > products > main app (highest priority)
 
   // Vue component rules
   {
@@ -188,7 +144,7 @@ export default withNuxt().append(
 
   // Allow console.error in utility files for error logging
   {
-    files: ['app/utils/**/*.ts'],
+    files: ['app/utils/**/*.ts', 'layers/**/app/utils/**/*.ts'],
     rules: {
       'no-console': ['error', { allow: ['error'] }],
     },
@@ -196,7 +152,7 @@ export default withNuxt().append(
 
   // Relaxed rules for store files (Pinia stores are naturally longer)
   {
-    files: ['app/**/stores/**/*.ts'],
+    files: ['app/**/stores/**/*.ts', 'layers/**/app/stores/**/*.ts'],
     rules: {
       'max-lines-per-function': 'off', // Store setup functions are naturally longer
       'no-magic-numbers': 'off', // Allow magic numbers in stores for array operations, etc.
