@@ -17,8 +17,15 @@ logs
 .DS_Store
 .fleet
 .idea
+.playwright
 
 # Local env files
 .env
 .env.*
 !.env.example
+
+# Claude Code local settings
+CLAUDE.local.md
+.claude/settings.local.json
+*.swp
+*.swo

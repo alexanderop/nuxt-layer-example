@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "pedantic": "warn",
+    "style": "warn"
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2024": true
+  },
+  "globals": {
+    "defineProps": "readonly",
+    "defineEmits": "readonly",
+    "defineExpose": "readonly",
+    "defineOptions": "readonly",
+    "defineSlots": "readonly",
+    "defineModel": "readonly",
+    "withDefaults": "readonly"
+  },
+  "rules": {
+    "func-style": "off",
+    "sort-imports": "off",
+    "sort-keys": "off",
+    "id-length": "off",
+    "curly": "off",
+    "no-ternary": "off",
+    "no-magic-numbers": "off",
+    "no-script-url": "off",
+    "max-lines-per-function": "off",
+    "unicorn/filename-case": "off",
+    "unicorn/catch-error-name": "off",
+    "unicorn/no-null": "off",
+    "unicorn/no-zero-fractions": "off",
+    "unicorn/numeric-separators-style": "off",
+    "unicorn/prefer-spread": "off",
+    "unicorn/switch-case-braces": "off",
+    "unicorn/prefer-string-replace-all": "off",
+    "unicorn/prefer-global-this": "off"
+  }
+}

@@ -7,18 +7,29 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "lint": "oxlint && eslint .",
+    "lint:oxlint": "oxlint",
+    "lint:eslint": "eslint ."
   },
   "dependencies": {
     "@nuxt/eslint": "1.10.0",
     "@nuxt/image": "1.11.0",
     "@nuxt/scripts": "0.13.0",
     "@nuxt/ui": "4.1.0",
+    "@pinia/nuxt": "^0.11.2",
     "@unhead/vue": "^2.0.3",
     "eslint": "^9.0.0",
     "nuxt": "^4.2.0",
+    "pinia": "^3.0.3",
     "typescript": "^5.6.3",
     "vue": "^3.5.22",
     "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-oxlint": "^1.25.0",
+    "oxlint": "^1.25.0"
   }
 }
