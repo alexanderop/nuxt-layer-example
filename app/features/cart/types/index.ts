@@ -3,40 +3,13 @@
  *
  * Note: Uses the shared Product type from app/types/product.ts
  * This demonstrates how features can depend on shared types without coupling to other features
+ * Types are now derived from Zod schemas for runtime validation
+ *
+ * @deprecated Import from ../schemas/cart instead for type-safe validation
  */
-
-import type { Product } from '~/types/product'
 
 /**
- * Cart item (product + quantity)
+ * Re-export types from Zod schemas
+ * This maintains backward compatibility while centralizing types
  */
-export interface CartItem {
-  /** Product reference */
-  product: Product
-
-  /** Quantity in cart */
-  quantity: number
-
-  /** Item subtotal (price * quantity) */
-  subtotal: number
-}
-
-/**
- * Cart state
- */
-export interface Cart {
-  /** Cart items */
-  items: CartItem[]
-
-  /** Total number of items */
-  itemCount: number
-
-  /** Subtotal (sum of all item subtotals) */
-  subtotal: number
-
-  /** Tax amount (10% of subtotal) */
-  tax: number
-
-  /** Total (subtotal + tax) */
-  total: number
-}
+export type { CartItem, Cart } from '../schemas/cart'

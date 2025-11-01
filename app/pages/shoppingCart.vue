@@ -7,6 +7,7 @@
 
 import { useHead } from '#app'
 import { useRouter } from 'vue-router'
+import { UMain, UContainer, UButton } from '#components'
 import CartList from '~/features/cart/components/cartList.vue'
 
 useHead({
@@ -16,7 +17,7 @@ useHead({
       name: 'description',
     },
   ],
-  title: 'Shopping Cart - Nuxt 4 Demo',
+  title: 'Shopping Cart - Modern Shop',
 })
 
 const router = useRouter()
@@ -27,77 +28,28 @@ function goBack() {
 </script>
 
 <template>
-  <div class="cart-page">
-    <div class="container">
+  <UMain>
+    <UContainer class="py-6 sm:py-8">
       <!-- Header with back button -->
-      <header class="header">
-        <button
+      <header class="mb-8">
+        <UButton
           type="button"
-          class="back-btn"
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-arrow-left"
+          label="Back to Shop"
+          class="mb-4"
           @click="goBack"
-        >
-          ← Back to Shop
-        </button>
-        <h1 class="title">
+        />
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100">
           Shopping Cart
         </h1>
       </header>
 
       <!-- Cart content -->
-      <main class="main">
+      <main>
         <CartList />
       </main>
-    </div>
-  </div>
+    </UContainer>
+  </UMain>
 </template>
-
-<style scoped>
-.cart-page {
-  min-height: 100vh;
-  background: #f9fafb;
-  padding: 24px 16px;
-}
-
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.header {
-  margin-bottom: 32px;
-}
-
-.back-btn {
-  padding: 8px 16px;
-  background: transparent;
-  color: #3b82f6;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: 16px;
-}
-
-.back-btn:hover {
-  background: #eff6ff;
-}
-
-.title {
-  font-size: 32px;
-  font-weight: 800;
-  color: #111827;
-  margin: 0;
-}
-
-@media (max-width: 640px) {
-  .cart-page {
-    padding: 16px 12px;
-  }
-
-  .title {
-    font-size: 24px;
-  }
-}
-</style>

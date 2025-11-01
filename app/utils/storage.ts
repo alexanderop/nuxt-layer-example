@@ -1,3 +1,5 @@
+import type { z } from 'zod'
+
 /**
  * Shared localStorage utilities
  *
@@ -5,6 +7,7 @@
  * - Type-safe localStorage access
  * - Handles JSON serialization/deserialization
  * - Works on both client and server (with SSR guards)
+ * - Runtime validation with Zod schemas for data integrity
  */
 
 /**
@@ -34,6 +37,8 @@ function isLocalStorageAvailable(): boolean {
  *
  * @example
  * const cart = getItem<Cart>('cart')
+ *
+ * @deprecated Use getValidatedItem with a Zod schema for type-safe validation
  */
 export function getItem<T>(key: string): T | null {
   if (!isLocalStorageAvailable()) {
@@ -48,6 +53,67 @@ export function getItem<T>(key: string): T | null {
     return JSON.parse(item) as T
   }
   catch {
+    return null
+  }
+}
+
+/**
+ * Get item from localStorage with Zod schema validation
+ *
+ * This is the recommended way to retrieve data from localStorage as it:
+ * - Validates data structure at runtime
+ * - Protects against corrupted/manipulated localStorage
+ * - Provides type safety through schema inference
+ * - Returns null for invalid data (with optional error logging)
+ *
+ * @param key - Storage key
+ * @param schema - Zod schema for validation
+ * @param onError - Optional callback for validation errors
+ * @returns Validated value or null if not found/invalid
+ *
+ * @example
+ * import { CartItemSchema } from '~/features/cart/schemas/cart'
+ *
+ * const items = getValidatedItem('cart', z.array(CartItemSchema), (error) => {
+ *   console.error('Cart validation failed:', error)
+ * })
+ */
+export function getValidatedItem<T extends z.ZodTypeAny>(
+  key: string,
+  schema: T,
+  onError?: (error: z.ZodError) => void,
+): z.infer<T> | null {
+  if (!isLocalStorageAvailable()) {
+    return null
+  }
+
+  try {
+    const item = localStorage.getItem(key)
+    if (!item) {
+      return null
+    }
+
+    const parsed = JSON.parse(item)
+    const result = schema.safeParse(parsed)
+
+    if (result.success) {
+      return result.data
+    }
+
+    // Validation failed - data is corrupted or invalid
+    if (onError) {
+      onError(result.error)
+    }
+    else {
+      console.error(`localStorage validation failed for key "${key}":`, result.error.issues)
+    }
+
+    // Remove corrupted data
+    removeItem(key)
+    return null
+  }
+  catch (error) {
+    console.error(`Failed to read from localStorage key "${key}":`, error)
     return null
   }
 }

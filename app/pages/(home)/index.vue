@@ -10,6 +10,7 @@
 
 import { onMounted } from 'vue'
 import { useHead } from '#app'
+import { UMain, UContainer } from '#components'
 import type { Product } from '~/types/product'
 import { useCartStore } from '~/features/cart/stores/cart'
 import { useProductsStore } from '~/features/products/stores/products'
@@ -20,11 +21,11 @@ import ProductGrid from '~/features/products/components/productGrid.vue'
 useHead({
   meta: [
     {
-      content: 'Feature-based architecture e-commerce demo with Nuxt 4',
+      content: 'Modern e-commerce shop with dark mode support',
       name: 'description',
     },
   ],
-  title: 'Shop - Nuxt 4 Demo',
+  title: 'Modern Shop',
 })
 
 const productsStore = useProductsStore()
@@ -41,22 +42,22 @@ function handleAddToCart(product: Product) {
 </script>
 
 <template>
-  <div class="home-page">
-    <div class="container">
+  <UMain>
+    <UContainer class="py-6 sm:py-8">
       <!-- Header -->
-      <header class="header">
-        <h1 class="title">
+      <header class="text-center mb-8 sm:mb-10">
+        <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           Product Catalog
         </h1>
-        <p class="subtitle">
-          Feature-based architecture demo
+        <p class="text-base text-gray-600 dark:text-gray-400">
+          Discover our collection of amazing products
         </p>
       </header>
 
       <!-- Main content -->
-      <div class="content">
+      <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
         <!-- Filters sidebar -->
-        <aside class="sidebar">
+        <aside class="lg:sticky lg:top-24">
           <ProductFilters
             :filter="productsStore.currentFilter"
             :sort="productsStore.currentSort"
@@ -68,7 +69,7 @@ function handleAddToCart(product: Product) {
         </aside>
 
         <!-- Products grid -->
-        <main class="main">
+        <main class="min-w-0">
           <ProductGrid
             :products="productsStore.filteredProducts"
             :loading="productsStore.loading"
@@ -79,82 +80,6 @@ function handleAddToCart(product: Product) {
 
       <!-- Floating cart summary -->
       <CartSummary />
-    </div>
-  </div>
+    </UContainer>
+  </UMain>
 </template>
-
-<style scoped>
-.home-page {
-  min-height: 100vh;
-  background: #f9fafb;
-  padding: 24px 16px 80px 16px;
-}
-
-.container {
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 40px;
-  padding-top: 20px;
-}
-
-.title {
-  font-size: 36px;
-  font-weight: 800;
-  color: #111827;
-  margin: 0 0 8px 0;
-}
-
-.subtitle {
-  font-size: 16px;
-  color: #6b7280;
-  margin: 0;
-}
-
-.content {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  gap: 24px;
-  align-items: start;
-}
-
-.sidebar {
-  position: sticky;
-  top: 24px;
-}
-
-.main {
-  min-width: 0;
-}
-
-@media (max-width: 1024px) {
-  .content {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    position: static;
-  }
-}
-
-@media (max-width: 640px) {
-  .home-page {
-    padding: 16px 12px 80px 12px;
-  }
-
-  .title {
-    font-size: 28px;
-  }
-
-  .subtitle {
-    font-size: 14px;
-  }
-
-  .header {
-    margin-bottom: 24px;
-  }
-}
-</style>

@@ -5,11 +5,14 @@
  * - Feature-specific state management
  * - Importing from shared layer (Product type)
  * - Mock data for demonstration purposes
+ * - API response validation with Zod (future-proofing)
  */
 
+import { z } from 'zod'
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Product } from '~/types/product'
+import { ProductSchema } from '~/shared/schemas/product'
 import type { ProductFilter, ProductSort } from '../types'
 import { filterProducts, sortProducts } from '../utils/filters'
 
@@ -151,6 +154,7 @@ export const useProductsStore = defineStore('products', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
   const currentFilter = ref<ProductFilter>({
+    search: undefined,
     category: 'all',
     inStock: false,
   })
@@ -181,6 +185,7 @@ export const useProductsStore = defineStore('products', () => {
 
   function resetFilter() {
     currentFilter.value = {
+      search: undefined,
       category: 'all',
       inStock: false,
     }
@@ -189,6 +194,9 @@ export const useProductsStore = defineStore('products', () => {
 
   /**
    * Simulate fetching products from API
+   *
+   * When connected to a real API, this will validate the response
+   * to ensure data integrity and type safety
    */
   async function fetchProducts() {
     loading.value = true
@@ -198,10 +206,27 @@ export const useProductsStore = defineStore('products', () => {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, API_DELAY_MS))
 
-      // In a real app, this would be an API call
-      // products.value = await $fetch('/api/products')
+      // In a real app, this would be an API call with validation:
+      // const response = await $fetch('/api/products')
+      //
+      // // Validate API response
+      // const validationResult = z.array(ProductSchema).safeParse(response)
+      //
+      // if (!validationResult.success) {
+      //   console.error('API response validation failed:', validationResult.error.errors)
+      //   throw new Error('Invalid product data received from API')
+      // }
+      //
+      // products.value = validationResult.data
 
-      // For now, we're using mock data already set
+      // For now, validate mock data to ensure it's correct
+      const validationResult = z.array(ProductSchema).safeParse(MOCK_PRODUCTS)
+      if (!validationResult.success) {
+        console.error('Mock data validation failed:', validationResult.error.issues)
+        throw new Error('Invalid product data')
+      }
+
+      products.value = validationResult.data
     }
     catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to fetch products'

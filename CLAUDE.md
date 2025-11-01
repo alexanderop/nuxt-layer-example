@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Nuxt 4 application using TypeScript and Vue 3. The project uses pnpm as the package manager and includes Nuxt UI, Nuxt Image, Nuxt Scripts, and Nuxt ESLint modules.
+This is a Nuxt 4 application using TypeScript and Vue 3. The project uses pnpm as the package manager and includes Nuxt UI, Nuxt Image, Nuxt Scripts, Nuxt ESLint modules, and Zod for runtime validation.
 
 ## Development Commands
 
@@ -95,6 +95,86 @@ TypeScript uses project references pointing to auto-generated configs in `.nuxt/
 - `tsconfig.server.json` - Server-side TypeScript config
 - `tsconfig.shared.json` - Shared TypeScript config
 - `tsconfig.node.json` - Node environment config
+
+### Runtime Validation with Zod
+
+This project uses **Zod** for runtime data validation, providing an additional layer of type safety beyond TypeScript's compile-time checks.
+
+#### Why Zod?
+- **Runtime Safety**: TypeScript types are erased at runtime; Zod validates actual data
+- **Data Integrity**: Protects against corrupted localStorage, malicious input, and malformed API responses
+- **Single Source of Truth**: Types are inferred from schemas, keeping validation and types in sync
+- **Better Error Messages**: Detailed validation errors for debugging
+
+#### Schema Locations
+Schemas are co-located with their features:
+- `app/shared/schemas/` - Shared schemas (Product, ProductCategory)
+- `app/features/*/schemas/` - Feature-specific schemas (Cart, Filters)
+
+#### Usage Patterns
+
+**Defining Schemas:**
+```typescript
+import { z } from 'zod'
+
+export const ProductSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1).max(200),
+  price: z.number().int().positive(),
+  // ... more fields
+})
+
+// Infer TypeScript type from schema
+export type Product = z.infer<typeof ProductSchema>
+```
+
+**Validating Data:**
+```typescript
+// Safe parsing (returns success/error)
+const result = ProductSchema.safeParse(data)
+if (result.success) {
+  const validProduct = result.data
+} else {
+  console.error('Validation failed:', result.error.errors)
+}
+
+// Direct parsing (throws on error)
+const validProduct = ProductSchema.parse(data)
+```
+
+**Validated Storage:**
+```typescript
+import { getValidatedItem } from '~/utils/storage'
+import { CartItemSchema } from '~/features/cart/schemas/cart'
+
+const items = getValidatedItem('cart', z.array(CartItemSchema))
+// Returns validated data or null if invalid
+```
+
+#### Current Validation Coverage
+- ✅ **Product data**: IDs, prices, stock, ratings, categories
+- ✅ **Cart data**: Item quantities, subtotals, localStorage hydration
+- ✅ **Filter inputs**: Search queries, price ranges, rating bounds
+- ✅ **API responses**: Prepared for future API integration
+- ✅ **Store actions**: Cart add/update operations validated
+
+#### Best Practices
+1. **Always validate external data**: localStorage, API responses, user input
+2. **Use schemas for types**: Import types from schema files, not separate type files
+3. **Validate early**: Check data at boundaries (storage, API, user input)
+4. **Handle errors gracefully**: Use `safeParse` and provide user feedback
+5. **Document constraints**: Add error messages to schema rules
+
+#### Type Migration
+Legacy type files (`app/types/product.ts`, `app/features/*/types/`) now re-export from schemas for backward compatibility. New code should import directly from schema files:
+
+```typescript
+// ✅ Preferred (schema + type)
+import { ProductSchema, type Product } from '~/shared/schemas/product'
+
+// ⚠️ Legacy (type only, no validation)
+import type { Product } from '~/types/product'
+```
 
 ## CRITICAL: Auto-Imports Are DISABLED
 

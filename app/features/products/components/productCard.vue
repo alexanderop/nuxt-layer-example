@@ -2,10 +2,11 @@
 /**
  * ProductCard component
  *
- * Displays a single product in a card format
+ * Displays a single product in a card format using Nuxt UI components
  * Note: Uses shared utilities (formatCurrency) from app/utils
  */
 
+import { UCard, UButton, UBadge } from '#components'
 import type { Product } from '~/types/product'
 import { formatCurrency } from '~/utils/currency'
 
@@ -24,163 +25,56 @@ function handleAddToCart() {
 </script>
 
 <template>
-  <div class="product-card">
-    <div class="product-image-container">
-      <NuxtImg
-        :src="product.image"
-        :alt="product.name"
-        class="product-image"
-        loading="lazy"
-      />
-      <div
-        v-if="product.stock === 0"
-        class="out-of-stock-badge"
-      >
-        Out of Stock
+  <UCard class="hover:shadow-lg transition-shadow duration-200">
+    <template #header>
+      <div class="relative w-full h-48 overflow-hidden bg-gray-100 dark:bg-gray-800 rounded-t-lg">
+        <NuxtImg
+          :src="product.image"
+          :alt="product.name"
+          class="w-full h-full object-cover"
+          loading="lazy"
+        />
+        <UBadge
+          v-if="product.stock === 0"
+          label="Out of Stock"
+          color="error"
+          class="absolute top-2 right-2"
+        />
       </div>
-    </div>
+    </template>
 
-    <div class="product-info">
-      <h3 class="product-name">
+    <div class="flex flex-col gap-3">
+      <h3 class="text-base font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">
         {{ product.name }}
       </h3>
 
-      <p class="product-description">
+      <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 flex-grow">
         {{ product.description }}
       </p>
 
-      <div class="product-footer">
-        <div class="product-details">
-          <span class="product-price">{{ formatCurrency(product.price) }}</span>
-          <span
-            v-if="product.rating"
-            class="product-rating"
-          >
-            ⭐ {{ product.rating.toFixed(1) }}
-          </span>
-        </div>
-
-        <button
-          type="button"
-          class="add-to-cart-btn"
-          :disabled="product.stock === 0"
-          @click="handleAddToCart"
+      <div class="flex justify-between items-center">
+        <span class="text-lg font-bold text-gray-900 dark:text-gray-100">
+          {{ formatCurrency(product.price) }}
+        </span>
+        <span
+          v-if="product.rating"
+          class="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1"
         >
-          {{ product.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
-        </button>
+          <span>⭐</span>
+          <span>{{ product.rating.toFixed(1) }}</span>
+        </span>
       </div>
     </div>
-  </div>
+
+    <template #footer>
+      <UButton
+        type="button"
+        block
+        :disabled="product.stock === 0"
+        :label="product.stock === 0 ? 'Out of Stock' : 'Add to Cart'"
+        icon="i-lucide-shopping-cart"
+        @click="handleAddToCart"
+      />
+    </template>
+  </UCard>
 </template>
-
-<style scoped>
-.product-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
-  transition: box-shadow 0.2s;
-}
-
-.product-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.product-image-container {
-  position: relative;
-  width: 100%;
-  height: 200px;
-  overflow: hidden;
-  background: #f3f4f6;
-}
-
-.product-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.out-of-stock-badge {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(239, 68, 68, 0.9);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.product-info {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.product-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
-  margin: 0;
-  line-height: 1.4;
-}
-
-.product-description {
-  font-size: 14px;
-  color: #6b7280;
-  margin: 0;
-  line-height: 1.5;
-  flex-grow: 1;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.product-footer {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.product-details {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.product-price {
-  font-size: 18px;
-  font-weight: 700;
-  color: #111827;
-}
-
-.product-rating {
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.add-to-cart-btn {
-  width: 100%;
-  padding: 10px 16px;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.add-to-cart-btn:hover:not(:disabled) {
-  background: #2563eb;
-}
-
-.add-to-cart-btn:disabled {
-  background: #9ca3af;
-  cursor: not-allowed;
-}
-</style>

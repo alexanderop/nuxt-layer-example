@@ -2,12 +2,16 @@
 /**
  * ProductFilters component
  *
- * Provides filtering UI for products
+ * Provides filtering UI for products using Nuxt UI components
+ * Validates filter inputs with Zod to ensure data integrity
  */
 
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { UCard, UButton, UInput, USelect, UCheckbox } from '#components'
 import type { ProductFilter, ProductSort } from '../types'
 import type { ProductCategory } from '~/types/product'
+import type { SelectItem } from '@nuxt/ui'
+import { ProductFilterSchema, ProductSortSchema } from '../schemas/filters'
 
 interface Props {
   filter: ProductFilter
@@ -29,13 +33,44 @@ const selectedCategory = ref<ProductCategory | 'all'>(props.filter.category || '
 const inStockOnly = ref(props.filter.inStock || false)
 const selectedSort = ref(props.sort)
 
+const categoryItems = computed<SelectItem[]>(() => [
+  { label: 'All Categories', value: 'all' },
+  ...props.categories.map(cat => ({
+    label: cat.charAt(0).toUpperCase() + cat.slice(1),
+    value: cat,
+  })),
+])
+
+const sortItems = computed<SelectItem[]>(() => [
+  { label: 'Name (A-Z)', value: 'name-asc' },
+  { label: 'Name (Z-A)', value: 'name-desc' },
+  { label: 'Price (Low to High)', value: 'price-asc' },
+  { label: 'Price (High to Low)', value: 'price-desc' },
+  { label: 'Rating (High to Low)', value: 'rating-desc' },
+])
+
 function applyFilters() {
-  emit('update:filter', {
+  // Validate filter data before emitting
+  const filterData = {
     category: selectedCategory.value,
     inStock: inStockOnly.value,
     search: searchQuery.value || undefined,
-  })
-  emit('update:sort', selectedSort.value)
+  }
+
+  const filterResult = ProductFilterSchema.safeParse(filterData)
+  if (!filterResult.success) {
+    console.error('Invalid filter data:', filterResult.error.issues)
+    return
+  }
+
+  const sortResult = ProductSortSchema.safeParse(selectedSort.value)
+  if (!sortResult.success) {
+    console.error('Invalid sort value:', sortResult.error.issues)
+    return
+  }
+
+  emit('update:filter', filterResult.data)
+  emit('update:sort', sortResult.data)
 }
 
 function handleReset() {
@@ -65,204 +100,84 @@ function handleSortChange() {
 </script>
 
 <template>
-  <div class="filters-container">
-    <div class="filters-header">
-      <h2 class="filters-title">
-        Filters
-      </h2>
-      <button
-        type="button"
-        class="reset-btn"
-        @click="handleReset"
-      >
-        Reset
-      </button>
-    </div>
+  <UCard>
+    <template #header>
+      <div class="flex justify-between items-center">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          Filters
+        </h2>
+        <UButton
+          type="button"
+          variant="outline"
+          color="primary"
+          size="sm"
+          label="Reset"
+          @click="handleReset"
+        />
+      </div>
+    </template>
 
-    <div class="filters-content">
+    <div class="flex flex-col gap-4">
       <!-- Search -->
-      <div class="filter-group">
+      <div class="flex flex-col gap-1.5">
         <label
           for="search"
-          class="filter-label"
-        >Search</label>
-        <input
+          class="text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Search
+        </label>
+        <UInput
           id="search"
           v-model="searchQuery"
           type="text"
-          class="filter-input"
           placeholder="Search products..."
+          icon="i-lucide-search"
           @input="handleSearchInput"
-        >
+        />
       </div>
 
       <!-- Category -->
-      <div class="filter-group">
+      <div class="flex flex-col gap-1.5">
         <label
           for="category"
-          class="filter-label"
-        >Category</label>
-        <select
+          class="text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Category
+        </label>
+        <USelect
           id="category"
           v-model="selectedCategory"
-          class="filter-select"
+          :items="categoryItems"
+          value-key="value"
           @change="handleCategoryChange"
-        >
-          <option value="all">
-            All Categories
-          </option>
-          <option
-            v-for="cat in categories"
-            :key="cat"
-            :value="cat"
-          >
-            {{ cat.charAt(0).toUpperCase() + cat.slice(1) }}
-          </option>
-        </select>
+        />
       </div>
 
       <!-- Sort -->
-      <div class="filter-group">
+      <div class="flex flex-col gap-1.5">
         <label
           for="sort"
-          class="filter-label"
-        >Sort By</label>
-        <select
+          class="text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Sort By
+        </label>
+        <USelect
           id="sort"
           v-model="selectedSort"
-          class="filter-select"
+          :items="sortItems"
+          value-key="value"
           @change="handleSortChange"
-        >
-          <option value="name-asc">
-            Name (A-Z)
-          </option>
-          <option value="name-desc">
-            Name (Z-A)
-          </option>
-          <option value="price-asc">
-            Price (Low to High)
-          </option>
-          <option value="price-desc">
-            Price (High to Low)
-          </option>
-          <option value="rating-desc">
-            Rating (High to Low)
-          </option>
-        </select>
+        />
       </div>
 
       <!-- In Stock -->
-      <div class="filter-group-checkbox">
-        <label class="checkbox-label">
-          <input
-            v-model="inStockOnly"
-            type="checkbox"
-            class="filter-checkbox"
-            @change="handleStockChange"
-          >
-          <span>In stock only</span>
-        </label>
+      <div class="pt-2">
+        <UCheckbox
+          v-model="inStockOnly"
+          label="In stock only"
+          @change="handleStockChange"
+        />
       </div>
     </div>
-  </div>
+  </UCard>
 </template>
-
-<style scoped>
-.filters-container {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 20px;
-}
-
-.filters-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.filters-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #111827;
-  margin: 0;
-}
-
-.reset-btn {
-  padding: 6px 12px;
-  background: transparent;
-  color: #3b82f6;
-  border: 1px solid #3b82f6;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.reset-btn:hover {
-  background: #3b82f6;
-  color: white;
-}
-
-.filters-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.filter-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-}
-
-.filter-input,
-.filter-select {
-  padding: 8px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-  color: #111827;
-  background: white;
-  transition: border-color 0.2s;
-}
-
-.filter-input:focus,
-.filter-select:focus {
-  outline: none;
-  border-color: #3b82f6;
-}
-
-.filter-group-checkbox {
-  padding-top: 8px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #374151;
-  cursor: pointer;
-}
-
-.filter-checkbox {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-@media (max-width: 768px) {
-  .filters-container {
-    padding: 16px;
-  }
-}
-</style>

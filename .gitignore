@@ -19,6 +19,10 @@ logs
 .idea
 .playwright
 
+# VSCode (allow settings.json for team consistency)
+.vscode/*
+!.vscode/settings.json
+
 # Local env files
 .env
 .env.*
