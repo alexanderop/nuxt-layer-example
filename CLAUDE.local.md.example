@@ -1,0 +1,32 @@
+# CLAUDE.local.md Example
+
+This file shows you how to create personal, machine-specific Claude Code configurations.
+
+## How to use:
+
+1. Copy this file to `CLAUDE.local.md` (already in .gitignore)
+2. Add your personal preferences, machine-specific paths, or private notes
+3. This file will be loaded alongside the main CLAUDE.md
+
+## Example content:
+
+```markdown
+# My Local Development Notes
+
+## Personal Preferences
+- I prefer to use the --open flag when running pnpm dev
+- My local dev server should run on port 3001 (use: pnpm dev --port 3001)
+
+## Machine-Specific Paths
+- My design files are in ~/Documents/Projects/nuxt-app-designs/
+
+## Private Notes
+- Testing credentials stored in 1Password vault "Dev Credentials"
+- Staging server: https://staging.example.com
+
+## My Common Tasks
+- When I say "deploy", I mean run the build and preview it locally first
+- When working on forms, always add proper validation and accessibility
+```
+
+This file is for YOUR eyes only and won't be shared with the team.
