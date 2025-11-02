@@ -1,15 +1,4 @@
 <script setup lang="ts">
-/**
- * Product Detail Image Gallery Component
- *
- * E-commerce best practices 2025:
- * - Carousel with thumbnails for multiple views
- * - Click to zoom in lightbox modal
- * - Swipe gestures on mobile
- * - Optimized image loading (webp, lazy, responsive)
- * - Loading states with skeleton
- */
-
 import { ref, computed } from 'vue'
 import { NuxtImg, UCarousel, UModal, UButton } from '#components'
 import type { Product } from '#layers/shared/app/schemas/product'

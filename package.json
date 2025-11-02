@@ -11,12 +11,7 @@
     "typecheck": "nuxt typecheck",
     "lint": "oxlint --type-aware && eslint .",
     "lint:oxlint": "oxlint --type-aware",
-    "lint:eslint": "eslint .",
-    "test": "vitest",
-    "test:unit": "vitest --project unit",
-    "test:integration": "vitest --project nuxt",
-    "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
+    "lint:eslint": "eslint ."
   },
   "dependencies": {
     "@nuxt/eslint": "1.10.0",
@@ -34,18 +29,10 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@anatine/zod-mock": "^3.14.0",
-    "@nuxt/test-utils": "^3.20.1",
-    "@testing-library/vue": "^8.1.0",
-    "@vitest/coverage-v8": "^4.0.6",
-    "@vue/test-utils": "^2.4.6",
     "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-nuxt-layers": "^0.1.0",
+    "eslint-plugin-nuxt-layers": "^0.2.0",
     "eslint-plugin-oxlint": "^1.25.0",
-    "fast-check": "^4.3.0",
-    "happy-dom": "^20.0.10",
     "oxlint": "^1.25.0",
-    "oxlint-tsgolint": "^0.4.0",
-    "vitest": "^4.0.6"
+    "oxlint-tsgolint": "^0.4.0"
   }
 }

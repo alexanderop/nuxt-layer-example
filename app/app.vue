@@ -7,7 +7,7 @@ import { useRouter } from 'vue-router'
 const cartStore = useCartStore()
 const router = useRouter()
 
-const cartItemCount = computed(() => cartStore.state.itemCount)
+const cartItemCount = computed(() => cartStore.itemCount)
 
 function goToCart() {
   router.push('/shoppingCart')
@@ -38,6 +38,7 @@ function goHome() {
             variant="ghost"
             icon="i-lucide-shopping-cart"
             aria-label="Shopping Cart"
+            class="relative"
             @click="goToCart"
           >
             <UBadge

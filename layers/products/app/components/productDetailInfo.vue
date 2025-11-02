@@ -1,15 +1,4 @@
 <script setup lang="ts">
-/**
- * Product Detail Info Component
- *
- * Displays all product information including:
- * - Category badge
- * - Title, rating, description
- * - Price and stock status
- * - Add to cart functionality with quantity controls
- * - Cart status message
- */
-
 import { UButton, UBadge, UCard } from '#components'
 import type { Product } from '#layers/shared/app/schemas/product'
 import { formatCurrency } from '#layers/shared/app/utils/currency'

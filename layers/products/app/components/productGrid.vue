@@ -1,12 +1,4 @@
 <script setup lang="ts">
-/**
- * ProductGrid component (Products Layer)
- *
- * Displays a grid of product cards using Nuxt UI components
- * Demonstrates composition of ProductCard components
- * Passes cart quantity and events through to child ProductCard components
- */
-
 import { UEmpty, UIcon } from '#components'
 import type { Product } from '#layers/shared/app/schemas/product'
 import ProductCard from './productCard.vue'
@@ -24,7 +16,7 @@ interface Emits {
   (e: 'remove', product: Product): void
 }
 
-const { products, loading = false, getCartQuantity = undefined } = defineProps<Props>()
+const { products, loading = false, getCartQuantity } = defineProps<Props>()
 
 const emit = defineEmits<Emits>()
 </script>

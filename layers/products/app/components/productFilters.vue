@@ -1,11 +1,4 @@
 <script setup lang="ts">
-/**
- * ProductFilters component (Products Layer)
- *
- * Provides filtering UI for products using Nuxt UI components
- * Validates filter inputs with Zod to ensure data integrity
- */
-
 import { ref, computed } from 'vue'
 import { UCard, UButton, UInput, USelect, UCheckbox } from '#components'
 import type { ProductCategory } from '#layers/shared/app/schemas/product'

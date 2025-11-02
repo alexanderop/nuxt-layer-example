@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useHead, useAsyncData } from '#app'
+import { useHead } from '#app'
 import { useRoute, useRouter } from 'vue-router'
 import { UButton, UEmpty } from '#components'
 import { useProductsStore } from '#layers/products/app/stores/products/useProductsStore'
@@ -13,10 +13,8 @@ const router = useRouter()
 const productsStore = useProductsStore()
 const cartStore = useCartStore()
 
-await useAsyncData('products', () => productsStore.fetchProducts())
-
 const productId = computed(() => route.params.id as string)
-const product = computed(() => productsStore.state.productById(productId.value))
+const product = computed(() => productsStore.productById(productId.value))
 
 const pageTitle = computed(() => {
   if (product.value) {
@@ -36,25 +34,25 @@ function goBack() {
 // Cart event handlers
 function handleAddToCart() {
   if (product.value) {
-    cartStore.dispatch({ type: 'ADD_ITEM', product: product.value })
+    cartStore.addItem(product.value)
   }
 }
 
 function handleIncrement() {
   if (product.value) {
-    cartStore.dispatch({ type: 'INCREMENT_ITEM', productId: product.value.id })
+    cartStore.incrementItem(product.value.id)
   }
 }
 
 function handleDecrement() {
   if (product.value) {
-    cartStore.dispatch({ type: 'DECREMENT_ITEM', productId: product.value.id })
+    cartStore.decrementItem(product.value.id)
   }
 }
 
 function handleRemove() {
   if (product.value) {
-    cartStore.dispatch({ type: 'REMOVE_ITEM', productId: product.value.id })
+    cartStore.removeItem(product.value.id)
   }
 }
 
@@ -62,7 +60,7 @@ const cartQuantity = computed(() => {
   if (!product.value) {
     return 0
   }
-  return cartStore.state.itemInCart(product.value.id)?.quantity ?? 0
+  return cartStore.itemInCart(product.value.id)?.quantity ?? 0
 })
 </script>
 

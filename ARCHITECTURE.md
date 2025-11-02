@@ -7,7 +7,7 @@
 - [Core Principles](#core-principles)
 - [Layer Structure](#layer-structure)
 - [Layer Communication Patterns](#layer-communication-patterns)
-- [Store Architecture (Elm Pattern)](#store-architecture-elm-pattern)
+- [Store Architecture (Pinia Composition API)](#store-architecture-pinia-composition-api)
 - [Schema-Driven Development](#schema-driven-development)
 - [Layer Configuration](#layer-configuration)
 - [Linting & Architecture Enforcement](#linting--architecture-enforcement)
@@ -348,7 +348,7 @@ sequenceDiagram
     User->>ProductPage: Click "Add to Cart"
     ProductPage->>ProductStore: Get product data
     ProductStore-->>ProductPage: Product object
-    ProductPage->>CartStore: dispatch ADD_ITEM
+    ProductPage->>CartStore: addItem(product)
     CartStore->>SharedUtils: formatCurrency()
     SharedUtils-->>CartStore: Formatted price
     CartStore->>CartStore: Update state
@@ -356,84 +356,90 @@ sequenceDiagram
     CartStore-->>User: Cart updated
 ```
 
-## Store Architecture (Elm Pattern)
+## Store Architecture (Pinia Composition API)
 
-Each layer's store follows **The Elm Architecture** for predictable state management:
+Each layer's store follows **Pinia Composition API** pattern for idiomatic Vue state management:
 
 ```mermaid
 graph LR
-    A[Component] -->|dispatch message| B[Update Function<br/>Pure Reducer]
-    B -->|new state| C[Model<br/>Reactive State]
-    C -->|computed| D[View<br/>Component]
-    D -->|user action| A
+    A[Component] -->|call action| B[Action Function]
+    B -->|mutate state| C[Reactive State<br/>ref/reactive]
+    C -->|computed| D[Getters<br/>computed]
+    D -->|reactive update| E[View<br/>Component]
+    E -->|user action| A
 
-    E[Effects] -.trigger.-> A
-    A -.run async.-> E
+    B -.trigger.-> F[Watchers<br/>Side Effects]
+    F -.persist.-> G[localStorage/API]
 
     style B fill:#d4edda
     style C fill:#fff3cd
-    style E fill:#f8d7da
+    style F fill:#f8d7da
 ```
 
 ### Store File Structure
 
-Each store is split into 4 files:
+Each store is a **single file** using Pinia's composition API:
 
-1. **`{feature}.ts`** - Pinia integration (reactive layer)
-2. **`{feature}Model.ts`** - State type definitions and initial state
-3. **`{feature}Update.ts`** - Pure reducer functions (no side effects)
-4. **`{feature}Effects.ts`** - Side effects (API calls, localStorage)
+**`use{Feature}Store.ts`** - Complete store definition
 
 **Example: Cart Store**
 
 ```typescript
-// cartModel.ts - State definition
-export interface CartModel {
-  items: CartItem[]
-}
+// stores/cart/useCartStore.ts
+import { defineStore } from 'pinia'
+import { ref, computed, watch } from 'vue'
+import type { CartItem } from '../../schemas/cart'
+import type { Product } from '#layers/shared/app/schemas/product'
 
-export type CartMsg =
-  | { type: 'ADD_ITEM'; product: Product; quantity: number }
-  | { type: 'REMOVE_ITEM'; productId: string }
-
-export const initialModel: CartModel = { items: [] }
-
-// cartUpdate.ts - Pure reducer (testable, no side effects)
-export function update(model: CartModel, msg: CartMsg): CartModel {
-  switch (msg.type) {
-    case 'ADD_ITEM':
-      // Return new state (immutable)
-      return { ...model, items: [...model.items, newItem] }
-    default:
-      return model
-  }
-}
-
-// cartEffects.ts - Side effects
-export function saveCartToStorage(items: CartItem[]) {
-  setItem('cart', items)
-}
-
-// cart.ts - Pinia integration
 export const useCartStore = defineStore('cart', () => {
-  const model = ref<CartModel>(initialModel)
+  // State (reactive)
+  const items = ref<CartItem[]>([])
 
-  function dispatch(msg: CartMsg) {
-    model.value = update(model.value, msg) // Pure update
+  // Getters (computed)
+  const itemCount = computed(() => items.value.length)
+  const isEmpty = computed(() => items.value.length === 0)
+
+  // Actions (functions - can mutate state directly)
+  function addItem(product: Product) {
+    const existing = items.value.find(i => i.product.id === product.id)
+    if (existing) {
+      existing.quantity += 1
+    } else {
+      items.value.push({ product, quantity: 1 })
+    }
   }
 
-  watch(() => model.value.items, saveCartToStorage) // Effect
+  function removeItem(productId: string) {
+    items.value = items.value.filter(i => i.product.id !== productId)
+  }
 
-  return { state: readonly(model), dispatch }
+  // Side effects (watchers, initialization)
+  loadFromStorage()
+  watch(items, (newItems) => {
+    saveToStorage(newItems)
+  }, { deep: true })
+
+  // Public API
+  return {
+    // State
+    items,
+    // Getters
+    itemCount,
+    isEmpty,
+    // Actions
+    addItem,
+    removeItem,
+  }
 })
 ```
 
 **Benefits:**
-- ✅ Pure functions are easily testable
-- ✅ All state changes go through single dispatch point
-- ✅ Side effects isolated and explicit
-- ✅ Time-travel debugging possible
-- ✅ State immutability enforced
+- ✅ Standard Pinia pattern (familiar to Vue developers)
+- ✅ Less boilerplate (1 file vs 4 files)
+- ✅ Direct state mutation in actions (Vue-like)
+- ✅ Computed properties for derived state
+- ✅ TypeScript inference from function signatures
+- ✅ Easy to test actions and getters
 
 ## Schema-Driven Development
 
@@ -719,85 +725,61 @@ export const UserSchema = z.object({
 export type User = z.infer<typeof UserSchema>
 ```
 
-### 4. Create Store (Elm Pattern)
+### 4. Create Store (Pinia Composition API)
 
 ```typescript
-// layers/auth/app/stores/auth/authModel.ts
-export interface AuthModel {
-  user: User | null
-  loading: boolean
-  error: string | null
-}
-
-export type AuthMsg =
-  | { type: 'LOGIN_START' }
-  | { type: 'LOGIN_SUCCESS'; user: User }
-  | { type: 'LOGIN_ERROR'; error: string }
-  | { type: 'LOGOUT' }
-
-export const initialModel: AuthModel = {
-  user: null,
-  loading: false,
-  error: null,
-}
-
-// layers/auth/app/stores/auth/authUpdate.ts
-export function update(model: AuthModel, msg: AuthMsg): AuthModel {
-  switch (msg.type) {
-    case 'LOGIN_START':
-      return { ...model, loading: true, error: null }
-    case 'LOGIN_SUCCESS':
-      return { ...model, user: msg.user, loading: false }
-    case 'LOGIN_ERROR':
-      return { ...model, error: msg.error, loading: false }
-    case 'LOGOUT':
-      return initialModel
-    default:
-      return model
-  }
-}
-
-// layers/auth/app/stores/auth/authEffects.ts
-export async function login(
-  email: string,
-  password: string,
-  dispatch: (msg: AuthMsg) => void
-) {
-  dispatch({ type: 'LOGIN_START' })
-
-  try {
-    const user = await $fetch('/api/auth/login', {
-      method: 'POST',
-      body: { email, password },
-    })
-
-    const validated = UserSchema.parse(user)
-    dispatch({ type: 'LOGIN_SUCCESS', user: validated })
-  } catch (error) {
-    dispatch({ type: 'LOGIN_ERROR', error: String(error) })
-  }
-}
-
-// layers/auth/app/stores/auth/auth.ts
+// layers/auth/app/stores/auth/useAuthStore.ts
 import { defineStore } from 'pinia'
-import { ref, computed, readonly } from 'vue'
+import { ref, computed } from 'vue'
+import { UserSchema, type User } from '../../schemas/user'
 
 export const useAuthStore = defineStore('auth', () => {
-  const model = ref<AuthModel>(initialModel)
+  // State
+  const user = ref<User | null>(null)
+  const loading = ref(false)
+  const error = ref<string | null>(null)
 
-  function dispatch(msg: AuthMsg) {
-    model.value = update(model.value, msg)
+  // Getters
+  const isAuthenticated = computed(() => user.value !== null)
+
+  // Actions
+  async function login(email: string, password: string) {
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await $fetch('/api/auth/login', {
+        method: 'POST',
+        body: { email, password },
+      })
+
+      // Validate with Zod
+      const validated = UserSchema.parse(response)
+      user.value = validated
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Login failed'
+      throw err
+    } finally {
+      loading.value = false
+    }
   }
 
-  const user = computed(() => model.value.user)
-  const isAuthenticated = computed(() => model.value.user !== null)
-  const loading = computed(() => model.value.loading)
+  function logout() {
+    user.value = null
+    error.value = null
+  }
 
+  // Public API
   return {
-    state: readonly({ user, isAuthenticated, loading }),
-    dispatch,
-    login: (email: string, password: string) => login(email, password, dispatch),
-    logout: () => dispatch({ type: 'LOGOUT' }),
+    // State
+    user,
+    loading,
+    error,
+    // Getters
+    isAuthenticated,
+    // Actions
+    login,
+    logout,
   }
 })
 ```
@@ -1003,7 +985,7 @@ layers/
 
 ### 3. Leaking Implementation Details
 **Problem:** Exposing internal store structure
-**Solution:** Only export readonly state and dispatch function
+**Solution:** Only export necessary state, getters, and actions from the store
 
 ### 4. Skipping Validation
 **Problem:** Trusting external data (localStorage, API)
@@ -1021,7 +1003,7 @@ layers/
 - [ ] Has `nuxt.config.ts` with metadata
 - [ ] Uses explicit imports (auto-imports disabled)
 - [ ] Defines Zod schemas in `schemas/`
-- [ ] Follows Elm pattern for stores (model/update/effects split)
+- [ ] Follows Pinia composition API pattern for stores (single file)
 - [ ] Components in `components/`
 - [ ] Pages in `pages/` (if needed)
 - [ ] Pure utilities in `utils/`
@@ -1029,17 +1011,19 @@ layers/
 
 ### For Store Files:
 
-- [ ] `{feature}Model.ts` - State types, message types, initial state
-- [ ] `{feature}Update.ts` - Pure reducer functions
-- [ ] `{feature}Effects.ts` - Side effects (API, localStorage)
-- [ ] `{feature}.ts` - Pinia integration with readonly state
+- [ ] `use{Feature}Store.ts` - Complete store using composition API
+- [ ] State defined with `ref()` or `reactive()`
+- [ ] Getters defined with `computed()`
+- [ ] Actions defined as functions
+- [ ] Side effects using `watch()` and initialization
+- [ ] Returns all state, getters, and actions
 
 ### For Components:
 
 - [ ] Uses `<script setup lang="ts">`
 - [ ] Explicit imports for all dependencies
 - [ ] Props and emits with TypeScript types
-- [ ] No direct store mutations (use dispatch)
+- [ ] Calls store actions directly (e.g., `store.addItem()`)
 
 ## Helpful Commands
 
@@ -1065,8 +1049,8 @@ touch layers/{name}/nuxt.config.ts
 
 - [Nuxt Layers Documentation](https://nuxt.com/docs/guide/going-further/layers)
 - [Pinia Stores](https://pinia.vuejs.org)
+- [Pinia Composition API](https://pinia.vuejs.org/core-concepts/#setup-stores)
 - [Zod Validation](https://zod.dev)
-- [The Elm Architecture](https://guide.elm-lang.org/architecture/)
 - [Vue Composition API](https://vuejs.org/guide/extras/composition-api-faq.html)
 
 ## Summary
@@ -1076,7 +1060,7 @@ touch layers/{name}/nuxt.config.ts
 1. **Layers = Business Domains**: Each layer is a feature with clear boundaries
 2. **Unidirectional Flow**: shared ← products ← cart ← main app
 3. **Explicit Imports**: No magic, better refactoring, clearer dependencies
-4. **Elm Pattern**: Predictable state via pure reducers + side effects
+4. **Pinia Composition API**: Standard Vue pattern for predictable state management
 5. **Schema-Driven**: Zod validation at all boundaries
 6. **Natural Enforcement**: Nuxt layers prevent cross-layer imports automatically
 

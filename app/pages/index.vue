@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useHead, useAsyncData } from '#app'
+import { useHead } from '#app'
 import { UMain, UContainer } from '#components'
 import type { Product } from '#layers/shared/app/schemas/product'
 import { useCartStore } from '#layers/cart/app/stores/cart/useCartStore'
@@ -21,26 +21,24 @@ useHead({
 const productsStore = useProductsStore()
 const cartStore = useCartStore()
 
-await useAsyncData('products', () => productsStore.fetchProducts())
-
 function handleAddToCart(product: Product) {
-  cartStore.dispatch({ type: 'ADD_ITEM', product })
+  cartStore.addItem(product)
 }
 
 function handleIncrement(product: Product) {
-  cartStore.dispatch({ type: 'INCREMENT_ITEM', productId: product.id })
+  cartStore.incrementItem(product.id)
 }
 
 function handleDecrement(product: Product) {
-  cartStore.dispatch({ type: 'DECREMENT_ITEM', productId: product.id })
+  cartStore.decrementItem(product.id)
 }
 
 function handleRemove(product: Product) {
-  cartStore.dispatch({ type: 'REMOVE_ITEM', productId: product.id })
+  cartStore.removeItem(product.id)
 }
 
 function getCartQuantity(productId: string): number {
-  return cartStore.state.itemInCart(productId)?.quantity ?? 0
+  return cartStore.itemInCart(productId)?.quantity ?? 0
 }
 </script>
 
@@ -59,19 +57,19 @@ function getCartQuantity(productId: string): number {
       <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
         <aside class="lg:sticky lg:top-24">
           <ProductFilters
-            :filter="productsStore.state.currentFilter"
-            :sort="productsStore.state.currentSort"
-            :categories="(productsStore.state.categories as any)"
-            @update:filter="(filter) => productsStore.dispatch({ type: 'SET_FILTER', filter })"
-            @update:sort="(sort) => productsStore.dispatch({ type: 'SET_SORT', sort })"
-            @reset="() => productsStore.dispatch({ type: 'RESET_FILTER' })"
+            :filter="productsStore.currentFilter"
+            :sort="productsStore.currentSort"
+            :categories="(productsStore.categories as any)"
+            @update:filter="(filter) => productsStore.setFilter(filter)"
+            @update:sort="(sort) => productsStore.setSort(sort)"
+            @reset="() => productsStore.resetFilter()"
           />
         </aside>
 
         <main class="min-w-0">
           <ProductGrid
-            :products="(productsStore.state.filteredProducts as any)"
-            :loading="productsStore.state.loading"
+            :products="(productsStore.filteredProducts as any)"
+            :loading="productsStore.loading"
             :get-cart-quantity="getCartQuantity"
             @add-to-cart="handleAddToCart"
             @increment="handleIncrement"

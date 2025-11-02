@@ -17,10 +17,7 @@ Pages have been **moved to the app layer** (`app/pages/`) because they compose m
 - **productDetailInfo.vue** - Product information panel with price, description, stock, rating (60% width on desktop)
 
 ### Stores (`app/stores/products/`)
-- **products.ts** - Main Pinia store with Elm Architecture pattern (dispatch method, readonly state)
-- **productsModel.ts** - State shape, ProductsMsg union types, and initial state
-- **productsUpdate.ts** - Pure reducer function for state transitions
-- **productsEffects.ts** - Side effects (async product fetching with mock delay)
+- **useProductsStore.ts** - Main Pinia store using standard composition API pattern with ref/computed/actions
 
 ### Schemas (`app/schemas/`)
 - **filters.ts** - ProductFilter and ProductSort schemas (feature-specific)
@@ -53,25 +50,20 @@ import type { Product } from '#layers/shared/app/schemas/product'  // ← From s
 
 ### Using the Store
 ```typescript
-import { useProductsStore } from '#layers/products/app/stores/products/products'
+import { useProductsStore } from '#layers/products/app/stores/products/useProductsStore'
 
 const productsStore = useProductsStore()
 
-// Fetch products (triggers side effect)
+// Fetch products (async action)
 await productsStore.fetchProducts()
 
-// Access computed state (readonly)
-const products = productsStore.state.filteredProducts
-const loading = productsStore.state.loading
-const categories = productsStore.state.categories
-const product = productsStore.state.productById('product-1')
+// Access state directly
+const products = productsStore.filteredProducts
+const loading = productsStore.loading
+const categories = productsStore.categories
+const product = productsStore.productById('product-1')
 
-// Dispatch messages to update state
-productsStore.dispatch({ type: 'SET_FILTER', filter: { category: 'electronics', inStock: true } })
-productsStore.dispatch({ type: 'SET_SORT', sort: 'price-asc' })
-productsStore.dispatch({ type: 'RESET_FILTER' })
-
-// Or use convenience methods
+// Call actions to update state
 productsStore.setFilter({ category: 'electronics', inStock: true })
 productsStore.setSort('price-asc')
 productsStore.resetFilter()
@@ -79,23 +71,34 @@ productsStore.resetFilter()
 
 ## Architecture
 
-This layer follows **The Elm Architecture** pattern for predictable state management:
+This layer uses the **standard Pinia composition API pattern** for state management:
 
-### Elm Architecture Pattern
-- **Model** (`productsModel.ts`): Defines immutable state shape, message types, and initial state
-- **Update** (`productsUpdate.ts`): Pure reducer function `(model, msg) => newModel` for all state transitions
-- **Effects** (`productsEffects.ts`): Isolated side effects (async API calls, mock data with 500ms delay)
-- **Store** (`products.ts`): Pinia integration exposing:
-  - `dispatch(msg)` - processes messages through the update function
-  - `state` - computed readonly state with derived values (filteredProducts, categories, productById)
-  - Convenience methods that wrap dispatch (setFilter, setSort, resetFilter, fetchProducts)
+### Store Pattern
+The `useProductsStore` follows Pinia's composition API pattern with:
+
+**State (ref/reactive):**
+- `products` - Array of all products
+- `loading` - Loading state for async operations
+- `error` - Error message if fetch fails
+- `currentFilter` - Current filter criteria (search, category, stock)
+- `currentSort` - Current sort option
+
+**Getters (computed):**
+- `filteredProducts` - Products filtered and sorted based on current settings
+- `productById(id)` - Find product by ID
+- `categories` - Unique list of product categories
+
+**Actions (functions):**
+- `fetchProducts()` - Async fetch from API with Zod validation
+- `setFilter(filter)` - Update filter criteria
+- `setSort(sort)` - Update sort option
+- `resetFilter()` - Reset filter and sort to defaults
 
 ### Store State Flow
-1. Component calls `productsStore.dispatch(msg)` or convenience method
-2. Message flows to `update(currentModel, msg)` pure function
-3. Update returns new immutable model
-4. Pinia reactively updates all computed state
-5. Components re-render with new data
+1. Component calls action directly (e.g., `productsStore.setFilter(...)`)
+2. Action updates state using direct mutations (e.g., `currentFilter.value = filter`)
+3. Reactive state triggers computed properties to recalculate
+4. Components automatically re-render with new data
 
 ### Layer Dependencies
 - ✅ Extends from: `shared` layer
@@ -110,7 +113,7 @@ This layer follows **The Elm Architecture** pattern for predictable state manage
 - **Filtering**: Search, category, price range, rating, stock availability
 - **Sorting**: Name (A-Z, Z-A), Price (low-high, high-low), Rating (high-low)
 - **Validation**: Runtime validation with Zod for data integrity
-- **State Management**: Predictable state updates with Elm Architecture
+- **State Management**: Standard Pinia composition API pattern
 - **Loading States**: Loading indicators and empty states
 - **Mock Data**: 12 sample products across 5 categories
 
@@ -188,7 +191,7 @@ export default defineNuxtConfig({
 
 - **No Auto-Imports**: All imports are explicit per project standards
 - **Layer Aliases**: Use `#layers/products/...` for cross-layer imports
-- **Zod Validation**: All external data validated at boundaries
-- **Pure Reducers**: Update function has no side effects, always returns new objects
+- **Zod Validation**: All external data validated at boundaries (API responses)
+- **Direct State Access**: State properties exposed directly, no wrapper object
 - **Computed State**: Filtering and sorting happen in computed properties for reactivity
-- **Message Dispatch**: Follows Elm pattern - components dispatch messages, never mutate state directly
+- **Standard Pinia Pattern**: Uses composition API with ref/computed/actions, matching cart store pattern

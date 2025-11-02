@@ -12,7 +12,7 @@ MUST FOLLOW THESE RULES, NO EXCEPTIONS
 * Always use layer aliases for cross layer imports (`#layers/...`, `#components`)
 * Use Zod for every external boundary (API, localStorage, cross layer)
 * Dual linting must pass: oxlint is the source of truth, ESLint is for Vue and architecture
-* Stores follow Elm pattern with 4 files
+* Stores use standard Pinia composition API pattern (single file per store)
 * Published ESLint plugin (eslint-plugin-nuxt-layers) enforces strict layer boundaries
 
 ## Project Structure
@@ -123,22 +123,58 @@ Configured in `eslint.config.mjs` using `eslint-plugin-nuxt-layers`:
 
 ## Store Pattern
 
-All Pinia stores follow Elm style.
+All Pinia stores use the **Composition API** pattern with setup functions.
 
-```text
-stores/{feature}/
-  {feature}.ts         # Pinia integration
-  {feature}Model.ts    # state + message types + initial state
-  {feature}Update.ts   # pure reducer (model, msg) => newModel
-  {feature}Effects.ts  # side effects (api, localStorage)
+```typescript
+// stores/{feature}/use{Feature}Store.ts
+import { defineStore } from 'pinia'
+import { ref, computed, watch } from 'vue'
+
+export const useFeatureStore = defineStore('feature', () => {
+  // State (ref/reactive)
+  const items = ref<Item[]>([])
+
+  // Getters (computed)
+  const itemCount = computed(() => items.value.length)
+  const isEmpty = computed(() => items.value.length === 0)
+
+  // Actions (functions)
+  function addItem(item: Item) {
+    items.value.push(item)
+  }
+
+  function removeItem(id: string) {
+    items.value = items.value.filter(i => i.id !== id)
+  }
+
+  // Effects (watchers, initialization)
+  watch(items, (newItems) => {
+    saveToStorage(newItems)
+  }, { deep: true })
+
+  // Public API
+  return {
+    // State
+    items,
+    // Getters
+    itemCount,
+    isEmpty,
+    // Actions
+    addItem,
+    removeItem,
+  }
+})
 ```
 
-Rules:
+**Rules:**
 
-* Components dispatch messages
-* `{feature}Update.ts` is always pure
-* Effects handle side work
-* Always return new objects in reducers so Vue can track changes
+* **State**: Use `ref()` or `reactive()` for reactive state
+* **Getters**: Use `computed()` for derived state
+* **Actions**: Use plain functions for state mutations and async operations
+* **Side effects**: Use `watch()` for persistence, initialize data on store creation
+* **Direct mutations**: State can be mutated directly in actions (no dispatch/messages)
+* **Return all**: Return all state, getters, and actions for external access
+* **Type safety**: TypeScript infers types from function signatures
 
 ## Schema and Validation
 
@@ -192,7 +228,7 @@ So you must:
 1. Explicit over magic
 2. Layers are features
 3. One way dependency flow
-4. Pure reducers in stores
+4. Standard Pinia composition API for stores
 5. Validate all boundaries
 6. Dual linting always
 7. TypeScript everywhere
