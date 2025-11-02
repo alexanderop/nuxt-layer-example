@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ProductCategorySchema } from './product'
+import { ProductCategorySchema } from '#layers/shared/app/schemas/product'
 
 /**
  * Product Filter Schemas with Runtime Validation

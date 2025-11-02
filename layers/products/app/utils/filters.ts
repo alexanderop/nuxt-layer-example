@@ -4,7 +4,7 @@
  * Pure functions for filtering and sorting products
  */
 
-import type { Product } from '../schemas/product'
+import type { Product } from '#layers/shared/app/schemas/product'
 import type { ProductFilter, ProductSort } from '../schemas/filters'
 
 /**

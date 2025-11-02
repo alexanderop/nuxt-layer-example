@@ -8,7 +8,7 @@
 
 import { ref, computed } from 'vue'
 import { UCard, UButton, UInput, USelect, UCheckbox } from '#components'
-import type { ProductCategory } from '../schemas/product'
+import type { ProductCategory } from '#layers/shared/app/schemas/product'
 import type { SelectItem } from '@nuxt/ui'
 import { ProductFilterSchema, ProductSortSchema, type ProductFilter, type ProductSort } from '../schemas/filters'
 

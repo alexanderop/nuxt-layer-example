@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ProductSchema } from '#layers/products/app/schemas/product'
+import { ProductSchema } from '#layers/shared/app/schemas/product'
 
 export const CartItemSchema = z.object({
   product: ProductSchema,

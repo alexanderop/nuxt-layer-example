@@ -12,7 +12,7 @@
 
 import { ref, computed } from 'vue'
 import { NuxtImg, UCarousel, UModal, UButton } from '#components'
-import type { Product } from '#layers/products/app/schemas/product'
+import type { Product } from '#layers/shared/app/schemas/product'
 
 interface Props {
   product: Product

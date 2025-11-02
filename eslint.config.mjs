@@ -1,6 +1,7 @@
 // @ts-check
 import withNuxt from './.nuxt/eslint.config.mjs'
 import oxlint from 'eslint-plugin-oxlint'
+import * as nuxtLayers from 'eslint-plugin-nuxt-layers'
 
 export default withNuxt().append(
   {
@@ -154,47 +155,23 @@ export default withNuxt().append(
   // Config files may need relaxed rules in the future
   // (currently no exceptions needed)
 
-  // Layer architecture boundary enforcement
-  // Prevents cross-layer imports and enforces unidirectional dependency flow
-  // This provides lint-time feedback in addition to Nuxt's compile-time enforcement
+  // Layer architecture boundary enforcement using eslint-plugin-nuxt-layers
+  // Enforces unidirectional dependency flow: shared ← products ← cart ← app
   {
+    files: ['layers/**/*', 'app/**/*'],
+    plugins: {
+      'nuxt-layers': nuxtLayers,
+    },
     rules: {
-      'import/no-restricted-paths': ['error', {
-        zones: [
-          // Prevent cross-layer imports between features
-          // Products layer cannot import from cart layer
-          {
-            target: './layers/products/**/*',
-            from: './layers/cart/**/*',
-            message: 'Products layer cannot import from cart layer. Layers must remain independent.',
-          },
-          // Cart layer cannot import from products layer (except schemas/contracts)
-          {
-            target: './layers/cart/**/*',
-            from: './layers/products/**/*',
-            except: ['./layers/products/app/schemas/**/*'],
-            message: 'Cart layer can only import product schemas (contracts), not stores or components.',
-          },
-
-          // Enforce unidirectional flow: prevent layers from importing from app
-          {
-            target: './layers/shared/**/*',
-            from: ['./layers/products/**/*', './layers/cart/**/*', './app/**/*'],
-            message: 'Shared layer cannot import from feature layers or app. Flow must be: shared ← features ← app',
-          },
-          {
-            target: './layers/products/**/*',
-            from: ['./layers/cart/**/*', './app/**/*'],
-            message: 'Products layer cannot import from cart layer or app. Flow must be: products ← cart ← app',
-          },
-          {
-            target: './layers/cart/**/*',
-            from: './app/**/*',
-            message: 'Cart layer cannot import from app. Flow must be: cart ← app',
-          },
-
-          // Allow shared layer to be imported by anyone (no restrictions on ./layers/shared as target)
-        ],
+      'nuxt-layers/layer-boundaries': ['error', {
+        root: 'layers',
+        aliases: ['#layers'],
+        layers: {
+          shared: [],
+          products: ['shared'],
+          cart: ['shared'],
+          app: ['*'],
+        },
       }],
     },
   },

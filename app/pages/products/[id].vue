@@ -116,8 +116,9 @@ const cartQuantity = computed(() => {
           <!-- Left: Product Image -->
           <div class="sm:p-8 lg:p-10 max-w-full">
             <ProductDetailImage
-:product="product"
-class="max-w-full" />
+              :product="product"
+              class="max-w-full"
+            />
           </div>
 
           <!-- Right: Product Info -->

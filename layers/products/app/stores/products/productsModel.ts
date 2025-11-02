@@ -9,7 +9,7 @@
  * Following The Elm Architecture pattern for predictable state management
  */
 
-import type { Product } from '../../schemas/product'
+import type { Product } from '#layers/shared/app/schemas/product'
 import type { ProductFilter, ProductSort } from '../../schemas/filters'
 
 /**

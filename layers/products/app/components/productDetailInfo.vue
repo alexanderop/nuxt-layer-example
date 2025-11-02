@@ -11,7 +11,7 @@
  */
 
 import { UButton, UBadge, UCard } from '#components'
-import type { Product } from '#layers/products/app/schemas/product'
+import type { Product } from '#layers/shared/app/schemas/product'
 import { formatCurrency } from '#layers/shared/app/utils/currency'
 
 interface Props {

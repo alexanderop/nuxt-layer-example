@@ -1,7 +1,11 @@
 import { z } from 'zod'
 
 /**
- * Product Schema with Runtime Validation
+ * Product Domain Schemas
+ *
+ * These schemas define the core Product domain entity that is shared across
+ * multiple features (products, cart, etc.). They live in the shared layer
+ * because they represent a data contract, not feature-specific logic.
  *
  * This Zod schema provides both compile-time types and runtime validation.
  * It enforces business rules that TypeScript alone cannot guarantee:

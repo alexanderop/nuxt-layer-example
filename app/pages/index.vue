@@ -10,7 +10,7 @@
 
 import { useHead, useAsyncData } from '#app'
 import { UMain, UContainer } from '#components'
-import type { Product } from '#layers/products/app/schemas/product'
+import type { Product } from '#layers/shared/app/schemas/product'
 import { useCartStore } from '#layers/cart/app/stores/cart/cart'
 import { useProductsStore } from '#layers/products/app/stores/products/products'
 import CartSummary from '#layers/cart/app/components/cartSummary.vue'

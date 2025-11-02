@@ -1,5 +1,5 @@
 import type { CartModel, CartMsg } from './cartModel'
-import type { Product } from '#layers/products/app/schemas/product'
+import type { Product } from '#layers/shared/app/schemas/product'
 
 
 function addItemToCart(model: CartModel, product: Product): CartModel {

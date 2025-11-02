@@ -6,13 +6,14 @@
 MUST FOLLOW THESE RULES, NO EXCEPTIONS
 
 * Stack: Nuxt 4, Vue 3, TypeScript, Pinia, Nuxt UI, Zod
-* Architecture is layer based: `app → cart → products → shared`
+* Architecture: Feature layers are INDEPENDENT, only app combines them
 * Auto imports are disabled project wide, always import everything
 * Always use `<script setup lang="ts">`, never Options API
 * Always use layer aliases for cross layer imports (`#layers/...`, `#components`)
 * Use Zod for every external boundary (API, localStorage, cross layer)
 * Dual linting must pass: oxlint is the source of truth, ESLint is for Vue and architecture
 * Stores follow Elm pattern with 4 files
+* Published ESLint plugin (eslint-plugin-nuxt-layers) enforces strict layer boundaries
 
 ## Project Structure
 
@@ -30,10 +31,12 @@ nuxt.config.ts     # auto imports disabled here and in each layer
 
 Import rules:
 
-* Layers can import from `shared`
-* `cart` can import product schemas (contracts), not product stores
-* App can import from any layer
-* Cross-layer imports are prevented by both compile-time (Nuxt) and lint-time (ESLint) enforcement
+* `shared` layer: cannot import from any layer (foundation)
+* `products` layer: can import from `shared` ONLY
+* `cart` layer: can import from `shared` ONLY
+* `app` layer: can import from any layer (composition layer)
+* Feature layers (products, cart) are INDEPENDENT - they never import from each other
+* Cross-layer imports are prevented by both compile-time (Nuxt) and lint-time (eslint-plugin-nuxt-layers)
 
 ## Project Commands
 
@@ -69,27 +72,39 @@ Nuxt's layer system naturally prevents cross-layer imports:
 * Build **fails immediately** if you try to violate layer boundaries
 * This is the **strongest** form of enforcement
 
-### 2. Lint-time (ESLint - Secondary)
-ESLint provides additional feedback during development:
-* `import/no-restricted-paths` rules catch violations early (in editor or on save)
-* Helpful error messages explain the violation
+### 2. Lint-time (Published ESLint Plugin - Secondary)
+Published ESLint plugin (`eslint-plugin-nuxt-layers`) provides immediate feedback:
+* Catches violations of both `#layers/...` aliases and relative imports like `../cart/...`
+* Works in editor (with ESLint integration) for instant feedback
+* Helpful error messages explain the violation and architecture intent
 * Catches issues before running TypeScript compiler
+* Maintained npm package with versioning and updates
 
-### Enforced Rules (eslint.config.mjs:152-198)
+### Enforced Rules
 ```text
 ✅ Allowed:
-  - Any layer can import from shared layer
-  - Cart can import product schemas (contracts)
-  - App can import from any layer
+  - shared layer can import: nothing (foundation)
+  - products layer can import: shared only
+  - cart layer can import: shared only
+  - app layer can import: shared, products, cart (composition layer)
+  - Each layer can import from itself
 
 ❌ Prevented:
-  - Products cannot import from cart
-  - Cart cannot import from products (except schemas)
-  - Layers cannot import from app
+  - Feature layers (products ↔ cart) cannot import from each other
+  - No layer can import from app
   - Shared cannot import from any layer
 
-Flow: shared ← products ← cart ← app
+Architecture: Feature layers are INDEPENDENT islands
+Flow: shared ← [products, cart] ← app
 ```
+
+### Published ESLint Plugin
+Configured in `eslint.config.mjs` using `eslint-plugin-nuxt-layers`:
+* Detects current layer from file path
+* Extracts imported layer from import statement (supports both aliases and relative paths)
+* Enforces strict separation: feature layers never depend on each other
+* If features need shared code, it MUST go in the shared layer
+* Published npm package at: https://www.npmjs.com/package/eslint-plugin-nuxt-layers
 
 ### Why Both?
 * **Compile-time**: Catches all violations, prevents broken builds

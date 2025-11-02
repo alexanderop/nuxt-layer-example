@@ -1,5 +1,5 @@
 import type { CartItem } from '../../schemas/cart'
-import type { Product } from '#layers/products/app/schemas/product'
+import type { Product } from '#layers/shared/app/schemas/product'
 
 
 export interface CartModel {

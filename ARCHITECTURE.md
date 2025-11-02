@@ -198,19 +198,17 @@ graph TD
     A --> D[Shared Layer]
     B --> D
     C --> D
-    C --> E[Products Schemas Only]
 
     style A fill:#e1f5ff
     style B fill:#fff3cd
     style C fill:#f8d7da
     style D fill:#d4edda
-    style E fill:#fff3cd,stroke-dasharray: 5 5
 ```
 
 **Rules:**
-- Layers can only depend on `shared` layer
-- Cart layer can import schemas from products layer (data contracts only)
-- Layers cannot import from each other (except shared)
+- Feature layers (products, cart) can **only** depend on `shared` layer
+- Feature layers **cannot** import from each other - strict independence
+- All shared domain entities (Product, ProductCategory) live in `shared` layer
 - Main app can import from any layer
 - No circular dependencies allowed
 
@@ -225,41 +223,49 @@ Auto-imports are **disabled** for code clarity:
 ### Physical Directory Layout
 
 ```
+app/                 # Main application layer
+├── pages/
+│   ├── index.vue              # Home page (composes products + cart)
+│   └── products/
+│       └── [id].vue           # Product detail page
+│
 layers/
-├── shared/          # Foundation layer (no business logic)
+├── shared/          # Foundation layer (domain entities + utilities)
 │   ├── nuxt.config.ts
 │   └── app/
 │       ├── components/
 │       │   └── baseBadge.vue
+│       ├── schemas/
+│       │   └── product.ts     # Product & ProductCategory (domain contracts)
+│       ├── test/
+│       │   └── mocks.ts       # Mock generators for Product
 │       └── utils/
 │           ├── currency.ts
 │           └── storage.ts
 │
-├── products/        # Product domain
+├── products/        # Product catalog feature (filtering, sorting, display)
 │   ├── nuxt.config.ts
 │   └── app/
 │       ├── components/
 │       │   ├── productCard.vue
 │       │   ├── productFilters.vue
-│       │   └── productGrid.vue
-│       ├── pages/
-│       │   ├── (home)/
-│       │   │   └── index.vue
-│       │   └── products/
-│       │       └── [id].vue
+│       │   ├── productGrid.vue
+│       │   ├── productDetailImage.vue
+│       │   └── productDetailInfo.vue
 │       ├── schemas/
-│       │   ├── product.ts
-│       │   └── filters.ts
+│       │   └── filters.ts     # ProductFilter & ProductSort
 │       ├── stores/
 │       │   └── products/
 │       │       ├── products.ts        # Pinia integration
 │       │       ├── productsModel.ts   # State type definitions
 │       │       ├── productsUpdate.ts  # Pure reducers
 │       │       └── productsEffects.ts # Side effects (API calls)
+│       ├── test/
+│       │   └── mocks.ts       # Mock generators for filters
 │       └── utils/
 │           └── filters.ts
 │
-└── cart/            # Shopping cart domain
+└── cart/            # Shopping cart feature (add/remove, persistence)
     ├── nuxt.config.ts
     └── app/
         ├── components/
@@ -269,13 +275,15 @@ layers/
         ├── pages/
         │   └── shoppingCart.vue
         ├── schemas/
-        │   └── cart.ts
+        │   └── cart.ts        # CartItem (references Product from shared)
         ├── stores/
         │   └── cart/
         │       ├── cart.ts           # Pinia integration
         │       ├── cartModel.ts      # State type definitions
         │       ├── cartUpdate.ts     # Pure reducers
         │       └── cartEffects.ts    # Side effects (localStorage)
+        ├── test/
+        │   └── mocks.ts       # Mock generators for cart items
         └── utils/
             └── calculations.ts
 ```
@@ -312,17 +320,18 @@ graph TB
 Nuxt provides special aliases for layer imports:
 
 ```typescript
-// ✅ Importing from shared layer
+// ✅ Importing from shared layer (domain entities + utilities)
 import { formatCurrency } from '#layers/shared/app/utils/currency'
 import BaseBadge from '#layers/shared/app/components/baseBadge.vue'
+import type { Product } from '#layers/shared/app/schemas/product'
 
-// ✅ Importing schemas from products layer (data contracts)
-import { ProductSchema } from '#layers/products/app/schemas/product'
+// ✅ Importing feature-specific schemas
+import { ProductFilterSchema } from '#layers/products/app/schemas/filters'
 
 // ✅ Importing from same layer
 import { filterProducts } from '../../utils/filters'
 
-// ❌ WRONG: Importing business logic across layers
+// ❌ WRONG: Importing business logic across feature layers
 import { useProductsStore } from '#layers/products/app/stores/products/products'
 ```
 
@@ -447,9 +456,9 @@ graph LR
 ```
 
 **Schema Locations:**
-- `layers/shared/schemas/` - None (shared has no business logic)
-- `layers/products/app/schemas/` - Product, ProductCategory, Filters
-- `layers/cart/app/schemas/` - CartItem, Cart
+- `layers/shared/app/schemas/` - **Product, ProductCategory** (domain entities used by multiple layers)
+- `layers/products/app/schemas/` - ProductFilter, ProductSort (feature-specific)
+- `layers/cart/app/schemas/` - CartItem (references Product from shared)
 
 **Usage:**
 ```typescript
@@ -470,9 +479,10 @@ if (result.success) {
 }
 ```
 
-**Cross-Layer Schema Imports:**
-- Cart layer imports `ProductSchema` from products layer
-- Only schema imports allowed (data contracts, not business logic)
+**Schema Architecture:**
+- **Shared schemas** = Domain entities needed by multiple layers (Product, ProductCategory)
+- **Feature schemas** = Layer-specific types (ProductFilter, CartItem)
+- Feature layers **only** import from shared layer - never from each other
 
 ## Layer Configuration
 
@@ -526,7 +536,7 @@ graph LR
 **ESLint (Secondary - Custom Rules):**
 - `eslint.config.mjs` - Vue component rules, complexity checks
 - `vue/no-undef-components` - Critical (catches missing imports)
-- `import/no-restricted-paths` - Architecture boundary enforcement (defense in depth)
+- `eslint-plugin-nuxt-layers` - Architecture boundary enforcement (defense in depth)
 
 ### Layer Boundaries (Defense in Depth)
 
@@ -544,20 +554,39 @@ import { formatCurrency } from '#layers/shared/...'
 
 **Nuxt layers naturally prevent** cross-layer imports at **compile-time**. Build fails immediately.
 
-#### 2. Lint-time (Secondary - ESLint)
+#### 2. Lint-time (Secondary - ESLint Plugin)
 
-ESLint provides early feedback with `import/no-restricted-paths` rules (eslint.config.mjs:155-198):
+ESLint provides early feedback using the [`eslint-plugin-nuxt-layers`](https://www.npmjs.com/package/eslint-plugin-nuxt-layers) package (eslint.config.mjs:158-177):
+
+**Plugin Configuration:**
+```typescript
+{
+  plugins: { 'nuxt-layers': nuxtLayers },
+  rules: {
+    'nuxt-layers/layer-boundaries': ['error', {
+      root: 'layers',
+      aliases: ['#layers'],
+      layers: {
+        shared: [],
+        products: ['shared'],
+        cart: ['shared'],
+        app: ['*'],
+      },
+    }],
+  },
+}
+```
 
 **Prevented:**
 - Products layer cannot import from cart layer
-- Cart layer cannot import from products layer (except schemas)
-- Layers cannot import from app
-- Shared layer cannot import from any layer
+- Cart layer cannot import from products layer
+- Feature layers cannot import from app layer
+- Shared layer cannot import from any feature layer
 
 **Allowed:**
-- Any layer can import from shared layer
-- Cart can import product schemas (data contracts only)
-- App can import from any layer
+- Any feature layer can import from shared layer
+- App layer can import from any layer
+- Shared layer contains domain entities (Product) used by multiple layers
 
 **Unidirectional Flow:**
 ```
@@ -566,7 +595,7 @@ shared ← products ← cart ← app
 
 **Why Both?**
 - **Compile-time**: Strongest enforcement, prevents broken builds
-- **Lint-time**: Faster feedback in editor/on save, better DX
+- **Lint-time**: Faster feedback in editor/on save, better DX via npm package
 - **Together**: Defense in depth with clear error messages at multiple stages
 
 ## When to Create a New Layer

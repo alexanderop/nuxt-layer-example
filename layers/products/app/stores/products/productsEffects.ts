@@ -13,7 +13,7 @@
 
 import { z } from 'zod'
 import type { ProductsMsg } from './productsModel'
-import { ProductSchema } from '../../schemas/product'
+import { ProductSchema } from '#layers/shared/app/schemas/product'
 
 /**
  * Fetch products from API

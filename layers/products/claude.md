@@ -2,11 +2,12 @@
 
 This layer provides complete product catalog functionality including listing, filtering, sorting, and detail views.
 
+**IMPORTANT:** Product schemas (Product, ProductCategory) are in the **shared layer** (`#layers/shared/app/schemas/product`), not in this layer. This layer only contains feature-specific schemas (ProductFilter, ProductSort).
+
 ## Contents
 
-### Pages (`app/pages/`)
-- **(home)/index.vue** - Home page with product catalog, filters, and cart summary (uses both products and cart layers)
-- **products/[id].vue** - Product detail page with image gallery and product info components
+### ⚠️ Note on Pages
+Pages have been **moved to the app layer** (`app/pages/`) because they compose multiple features. The products layer now focuses purely on product catalog feature components and logic.
 
 ### Components (`app/components/`)
 - **productCard.vue** - Individual product card with image, details, and add-to-cart button
@@ -22,10 +23,12 @@ This layer provides complete product catalog functionality including listing, fi
 - **productsEffects.ts** - Side effects (async product fetching with mock delay)
 
 ### Schemas (`app/schemas/`)
-- **product.ts** - Product and ProductCategory schemas with Zod validation
-  - Validates IDs, names, descriptions, prices (in cents), images (URLs), stock (non-negative), ratings (0-5)
-- **filters.ts** - ProductFilter and ProductSort schemas
+- **filters.ts** - ProductFilter and ProductSort schemas (feature-specific)
   - Validates search queries, categories, price ranges (min < max), ratings, stock filters
+
+**⚠️ Product schemas moved to shared layer:**
+- Product and ProductCategory are now in `#layers/shared/app/schemas/product`
+- This allows both products and cart layers to import them without cross-layer dependencies
 
 ### Utils (`app/utils/`)
 - **filters.ts** - Pure functions for filtering and sorting products by search, category, price range, rating, stock
@@ -37,7 +40,7 @@ This layer provides complete product catalog functionality including listing, fi
 <script setup lang="ts">
 import ProductGrid from '#layers/products/app/components/productGrid.vue'
 import ProductFilters from '#layers/products/app/components/productFilters.vue'
-import type { Product } from '#layers/products/app/schemas/product'
+import type { Product } from '#layers/shared/app/schemas/product'  // ← From shared layer
 </script>
 
 <template>
@@ -95,9 +98,11 @@ This layer follows **The Elm Architecture** pattern for predictable state manage
 5. Components re-render with new data
 
 ### Layer Dependencies
-- ✅ Extends from: `shared` layer (uses formatCurrency utility from `#layers/shared/app/utils/currency.ts`)
-- ✅ Can import from: Vue, Pinia, Zod, Nuxt UI components, vue-router
-- ❌ Cannot import from: `cart` layer or main app (maintains unidirectional dependency flow)
+- ✅ Extends from: `shared` layer
+  - Product & ProductCategory schemas from `#layers/shared/app/schemas/product`
+  - formatCurrency utility from `#layers/shared/app/utils/currency`
+- ✅ Can import from: Vue, Pinia, Zod, Nuxt UI components, vue-router, shared layer only
+- ❌ Cannot import from: `cart` layer or main app (strict feature layer independence)
 
 ## Features
 

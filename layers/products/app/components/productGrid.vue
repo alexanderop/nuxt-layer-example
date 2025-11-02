@@ -8,7 +8,7 @@
  */
 
 import { UEmpty, UIcon } from '#components'
-import type { Product } from '../schemas/product'
+import type { Product } from '#layers/shared/app/schemas/product'
 import ProductCard from './productCard.vue'
 
 interface Props {
@@ -24,7 +24,7 @@ interface Emits {
   (e: 'remove', product: Product): void
 }
 
-const { products, loading = false, getCartQuantity } = defineProps<Props>()
+const { products, loading = false, getCartQuantity = undefined } = defineProps<Props>()
 
 const emit = defineEmits<Emits>()
 </script>
