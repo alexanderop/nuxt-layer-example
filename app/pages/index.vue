@@ -1,18 +1,9 @@
 <script setup lang="ts">
-/**
- * Home page
- *
- * Demonstrates layer composition:
- * - Products layer: ProductGrid and ProductFilters
- * - Cart layer: CartSummary
- * - Both layers work together without direct dependencies
- */
-
 import { useHead, useAsyncData } from '#app'
 import { UMain, UContainer } from '#components'
 import type { Product } from '#layers/shared/app/schemas/product'
-import { useCartStore } from '#layers/cart/app/stores/cart/cart'
-import { useProductsStore } from '#layers/products/app/stores/products/products'
+import { useCartStore } from '#layers/cart/app/stores/cart/useCartStore'
+import { useProductsStore } from '#layers/products/app/stores/products/useProductsStore'
 import CartSummary from '#layers/cart/app/components/cartSummary.vue'
 import ProductFilters from '#layers/products/app/components/productFilters.vue'
 import ProductGrid from '#layers/products/app/components/productGrid.vue'
@@ -30,10 +21,8 @@ useHead({
 const productsStore = useProductsStore()
 const cartStore = useCartStore()
 
-// Fetch products with useAsyncData for SSR
 await useAsyncData('products', () => productsStore.fetchProducts())
 
-// Cart event handlers
 function handleAddToCart(product: Product) {
   cartStore.dispatch({ type: 'ADD_ITEM', product })
 }
@@ -58,7 +47,6 @@ function getCartQuantity(productId: string): number {
 <template>
   <UMain>
     <UContainer class="py-6 sm:py-8">
-      <!-- Header -->
       <header class="text-center mb-8 sm:mb-10">
         <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           Product Catalog
@@ -68,21 +56,18 @@ function getCartQuantity(productId: string): number {
         </p>
       </header>
 
-      <!-- Main content -->
       <div class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
-        <!-- Filters sidebar -->
         <aside class="lg:sticky lg:top-24">
           <ProductFilters
             :filter="productsStore.state.currentFilter"
             :sort="productsStore.state.currentSort"
             :categories="(productsStore.state.categories as any)"
-            @update:filter="productsStore.setFilter"
-            @update:sort="productsStore.setSort"
-            @reset="productsStore.resetFilter"
+            @update:filter="(filter) => productsStore.dispatch({ type: 'SET_FILTER', filter })"
+            @update:sort="(sort) => productsStore.dispatch({ type: 'SET_SORT', sort })"
+            @reset="() => productsStore.dispatch({ type: 'RESET_FILTER' })"
           />
         </aside>
 
-        <!-- Products grid -->
         <main class="min-w-0">
           <ProductGrid
             :products="(productsStore.state.filteredProducts as any)"
@@ -96,7 +81,6 @@ function getCartQuantity(productId: string): number {
         </main>
       </div>
 
-      <!-- Floating cart summary -->
       <CartSummary />
     </UContainer>
   </UMain>

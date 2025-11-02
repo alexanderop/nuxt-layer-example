@@ -2,7 +2,7 @@
 import { UButton, UBadge } from '#components'
 import { useRouter } from 'vue-router'
 import { formatCurrency } from '#layers/shared/app/utils/currency'
-import { useCartStore } from '../stores/cart/cart'
+import { useCartStore } from '../stores/cart/useCartStore'
 
 const cartStore = useCartStore()
 const router = useRouter()

@@ -11,7 +11,7 @@
  * Following The Elm Architecture pattern
  */
 
-import { initialModel, type ProductsModel, type ProductsMsg } from './productsModel'
+import { initialModel, type ProductsModel, type ProductsMsg } from './useProductsStoreModel'
 
 /**
  * Pure update function

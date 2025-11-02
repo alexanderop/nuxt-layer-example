@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { CartMsg } from './cartModel'
+import type { CartMsg } from './useCartStoreModel'
 import { CartItemSchema, type CartItem } from '../../schemas/cart'
 import { getValidatedItem, setItem } from '#layers/shared/app/utils/storage'
 

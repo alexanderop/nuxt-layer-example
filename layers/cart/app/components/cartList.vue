@@ -2,7 +2,7 @@
 import { UCard, UButton, UEmpty, USeparator } from '#components'
 import { useRouter } from 'vue-router'
 import { formatCurrency } from '#layers/shared/app/utils/currency'
-import { useCartStore } from '../stores/cart/cart'
+import { useCartStore } from '../stores/cart/useCartStore'
 import CartItem from './cartItem.vue'
 
 const cartStore = useCartStore()

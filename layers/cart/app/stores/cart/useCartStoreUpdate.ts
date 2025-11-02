@@ -1,4 +1,4 @@
-import type { CartModel, CartMsg } from './cartModel'
+import type { CartModel, CartMsg } from './useCartStoreModel'
 import type { Product } from '#layers/shared/app/schemas/product'
 
 

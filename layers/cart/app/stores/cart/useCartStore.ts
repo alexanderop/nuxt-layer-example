@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed, readonly, watch } from 'vue'
-import { initialModel, type CartModel, type CartMsg } from './cartModel'
-import { update } from './cartUpdate'
-import { loadCartFromStorage, saveCartToStorage } from './cartEffects'
+import { initialModel, type CartModel, type CartMsg } from './useCartStoreModel'
+import { update } from './useCartStoreUpdate'
+import { loadCartFromStorage, saveCartToStorage } from './useCartStoreEffects'
 import {
   calculateItemCount,
   calculateSubtotal,

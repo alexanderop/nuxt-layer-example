@@ -12,7 +12,7 @@
  */
 
 import { z } from 'zod'
-import type { ProductsMsg } from './productsModel'
+import type { ProductsMsg } from './useProductsStoreModel'
 import { ProductSchema } from '#layers/shared/app/schemas/product'
 
 /**

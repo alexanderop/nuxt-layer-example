@@ -1,20 +1,10 @@
 <script setup lang="ts">
-/**
- * Product detail page
- *
- * Demonstrates:
- * - Dynamic routing with [id] parameter
- * - Composition of products and cart layers
- * - Component-based architecture for better maintainability
- * - 40/60 desktop layout split
- */
-
 import { computed } from 'vue'
 import { useHead, useAsyncData } from '#app'
 import { useRoute, useRouter } from 'vue-router'
 import { UButton, UEmpty } from '#components'
-import { useProductsStore } from '#layers/products/app/stores/products/products'
-import { useCartStore } from '#layers/cart/app/stores/cart/cart'
+import { useProductsStore } from '#layers/products/app/stores/products/useProductsStore'
+import { useCartStore } from '#layers/cart/app/stores/cart/useCartStore'
 import ProductDetailImage from '#layers/products/app/components/productDetailImage.vue'
 import ProductDetailInfo from '#layers/products/app/components/productDetailInfo.vue'
 
@@ -23,7 +13,6 @@ const router = useRouter()
 const productsStore = useProductsStore()
 const cartStore = useCartStore()
 
-// Fetch products on SSR to ensure product data is available
 await useAsyncData('products', () => productsStore.fetchProducts())
 
 const productId = computed(() => route.params.id as string)
