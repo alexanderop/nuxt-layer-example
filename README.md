@@ -1,6 +1,30 @@
-# Nuxt Minimal Starter
+# Nuxt Layers Modular Architecture Demo
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+This project demonstrates how to build a scalable, modular application using **Nuxt Layers** for feature-based architecture. It showcases best practices for organizing code into independent, reusable layers with strict boundaries.
+
+## Project Goal
+
+The goal of this project is to show how **Nuxt layers work for modular architecture** by:
+
+- **Feature isolation**: Each feature (products, cart) is an independent layer
+- **Strict boundaries**: Layers cannot import from each other, enforced at compile-time and lint-time
+- **Shared foundation**: Common UI components and utilities live in a shared layer
+- **Composition at app level**: The main app composes all layers together
+- **Scalability**: Easy to add, remove, or modify features without affecting others
+
+## Architecture Overview
+
+```
+layers/
+├── shared/        # Foundation: UI components, utilities (no dependencies)
+├── products/      # Products feature: schemas, store, components
+└── cart/          # Cart feature: schemas, store, components, persistence
+app/               # Composition layer: pages that use all features
+```
+
+**Key principle**: Features are independent islands. If two features need shared code, it goes in the `shared` layer.
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed architectural decisions and [CLAUDE.md](./CLAUDE.md) for development standards.
 
 ## Setup
 
